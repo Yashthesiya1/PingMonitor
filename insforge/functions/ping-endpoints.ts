@@ -3,6 +3,7 @@ import { createClient } from "npm:@insforge/sdk";
 interface EndpointRow {
   id: string;
   user_id: string;
+  name: string;
   url: string;
   method: string;
   monitor_type: string;
@@ -137,19 +138,20 @@ export default async function (req: Request): Promise<Response> {
           p_status_indicator: statusIndicator,
         });
 
-        // --- Incident detection ---
+        // --- Incident detection + email notifications ---
+        const baseUrl = Deno.env.get("INSFORGE_BASE_URL") || "";
+        const checkedAt = new Date().toLocaleString("en-US", { timeZone: "UTC" }) + " UTC";
+
         if (!isUp) {
-          // Check if there's already an open incident
           const { data: openIncident } = await client.database
             .rpc("get_open_incident", { p_endpoint_id: endpoint.id });
 
           if (openIncident) {
-            // Increment failure count
             await client.database.rpc("increment_incident_failures", {
               p_endpoint_id: endpoint.id,
             });
           } else {
-            // Create new incident (first failure triggers it immediately for responsiveness)
+            // Create new incident
             const { data: incidentId } = await client.database
               .rpc("create_incident", {
                 p_endpoint_id: endpoint.id,
@@ -157,8 +159,29 @@ export default async function (req: Request): Promise<Response> {
                 p_cause: errorMessage || `HTTP ${statusCode}`,
               });
 
-            // Log notification
+            // Send email notification
             if (endpoint.notify_email && incidentId) {
+              const { data: userEmail } = await client.database
+                .rpc("get_user_email_for_endpoint", { p_endpoint_id: endpoint.id });
+
+              if (userEmail) {
+                try {
+                  await fetch(`${baseUrl}/functions/send-notification`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "endpoint_down",
+                      endpoint_name: endpoint.name,
+                      endpoint_url: endpoint.url,
+                      user_email: userEmail,
+                      incident_id: incidentId,
+                      cause: errorMessage || `HTTP ${statusCode}`,
+                      checked_at: checkedAt,
+                    }),
+                  });
+                } catch { /* don't fail the check if email fails */ }
+              }
+
               await client.database.rpc("log_notification", {
                 p_user_id: endpoint.user_id,
                 p_endpoint_id: endpoint.id,
@@ -169,7 +192,6 @@ export default async function (req: Request): Promise<Response> {
             }
           }
         } else {
-          // Endpoint is up — resolve any open incident
           const { data: openIncident } = await client.database
             .rpc("get_open_incident", { p_endpoint_id: endpoint.id });
 
@@ -178,8 +200,38 @@ export default async function (req: Request): Promise<Response> {
               p_endpoint_id: endpoint.id,
             });
 
-            // Log recovery notification
+            // Send recovery email
             if (endpoint.notify_email) {
+              const { data: userEmail } = await client.database
+                .rpc("get_user_email_for_endpoint", { p_endpoint_id: endpoint.id });
+
+              const durationSecs = Math.floor(
+                (Date.now() - new Date(openIncident.started_at).getTime()) / 1000
+              );
+              const duration = durationSecs < 60
+                ? `${durationSecs}s`
+                : durationSecs < 3600
+                ? `${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s`
+                : `${Math.floor(durationSecs / 3600)}h ${Math.floor((durationSecs % 3600) / 60)}m`;
+
+              if (userEmail) {
+                try {
+                  await fetch(`${baseUrl}/functions/send-notification`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "endpoint_recovered",
+                      endpoint_name: endpoint.name,
+                      endpoint_url: endpoint.url,
+                      user_email: userEmail,
+                      incident_id: openIncident.id,
+                      duration,
+                      checked_at: checkedAt,
+                    }),
+                  });
+                } catch { /* don't fail the check if email fails */ }
+              }
+
               await client.database.rpc("log_notification", {
                 p_user_id: endpoint.user_id,
                 p_endpoint_id: endpoint.id,
