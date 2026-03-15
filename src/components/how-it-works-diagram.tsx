@@ -9,7 +9,7 @@ export function HowItWorksDiagram() {
       className="w-full max-w-4xl mx-auto"
     >
       {/* ===== BACKGROUND ===== */}
-      <rect width="900" height="340" rx="20" fill="hsl(240, 4.8%, 95.9%)" />
+      <rect width="900" height="340" rx="20" className="fill-muted" />
 
       {/* ===== LEFT: USER / DASHBOARD ===== */}
       {/* Dashboard card */}

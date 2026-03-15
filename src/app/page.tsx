@@ -25,11 +25,11 @@ import { RoadmapTimeline } from "@/components/roadmap-section";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <AutoRedirectIfSignedIn />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-lg">
+      <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <PingMonitorLogo size={28} className="sm:w-8 sm:h-8" />
@@ -245,7 +245,7 @@ export default function Home() {
               { icon: Zap, title: "AI Service Status", desc: "Track OpenAI, Anthropic, Gemini and 20+ services via official status pages. No API key needed." },
               { icon: Shield, title: "Secure & Private", desc: "Your data is encrypted and isolated. Row-level security ensures nobody else sees your monitors." },
             ].map((feature, i) => (
-              <div key={i} className="group rounded-xl sm:rounded-2xl border bg-white p-5 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
+              <div key={i} className="group rounded-xl sm:rounded-2xl border bg-background p-5 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
                 <div className="mb-3 sm:mb-5 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-primary/10 group-hover:bg-primary/15 transition-colors">
                   <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
@@ -291,7 +291,7 @@ export default function Home() {
               { icon: "🌐", name: "Netlify" },
               { icon: "🌊", name: "DigitalOcean" },
             ].map((service, i) => (
-              <div key={i} className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
+              <div key={i} className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border bg-background px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
                 <span className="text-sm sm:text-base">{service.icon}</span>
                 {service.name}
               </div>
@@ -360,7 +360,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto">
             {/* Free tier */}
-            <div className="rounded-xl sm:rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+            <div className="rounded-xl sm:rounded-2xl border bg-background p-6 sm:p-8 shadow-sm">
               <h3 className="text-lg font-semibold">Free</h3>
               <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
                 <span className="text-3xl sm:text-4xl font-extrabold">$0</span>
@@ -399,7 +399,7 @@ export default function Home() {
             </div>
 
             {/* Pro tier */}
-            <div className="rounded-xl sm:rounded-2xl border-2 border-primary bg-white p-6 sm:p-8 shadow-lg shadow-primary/10 relative">
+            <div className="rounded-xl sm:rounded-2xl border-2 border-primary bg-background p-6 sm:p-8 shadow-lg shadow-primary/10 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="rounded-full bg-primary px-4 py-1 text-[11px] sm:text-xs font-semibold text-white whitespace-nowrap">
                   Coming Soon
@@ -486,7 +486,7 @@ export default function Home() {
                 items: ["Stripe Billing", "Team Management", "Public REST API", "AI Insights"],
               },
             ].map((phase, i) => (
-              <div key={i} className="rounded-xl border bg-white p-5 shadow-sm">
+              <div key={i} className="rounded-xl border bg-background p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`${phase.color} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full`}>
                     {phase.status.toUpperCase()}
@@ -533,7 +533,7 @@ export default function Home() {
                 tagColor: "bg-muted-foreground",
               },
             ].map((card, i) => (
-              <div key={i} className="rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div key={i} className="rounded-xl border bg-background p-5 shadow-sm hover:shadow-md transition-shadow">
                 <span className={`${card.tagColor} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full`}>
                   {card.tag.toUpperCase()}
                 </span>

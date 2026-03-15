@@ -52,6 +52,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, EndpointCheck, Incident } from "@/lib/types";
 
@@ -65,8 +66,9 @@ export default function EndpointDetailPage({
   const [checks, setChecks] = useState<EndpointCheck[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -106,18 +108,26 @@ export default function EndpointDetailPage({
 
   const handleToggle = async () => {
     if (!endpoint) return;
-    await fetchWithAuth(`/api/endpoints/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !endpoint.is_active }),
-    });
-    setEndpoint((prev) =>
-      prev ? { ...prev, is_active: !prev.is_active } : null
-    );
+    setToggling(true);
+    try {
+      await fetchWithAuth(`/api/endpoints/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !endpoint.is_active }),
+      });
+      toast.success(endpoint.is_active ? "Monitor paused" : "Monitor resumed");
+      setEndpoint((prev) =>
+        prev ? { ...prev, is_active: !prev.is_active } : null
+      );
+    } finally {
+      setToggling(false);
+    }
   };
 
   const handleDelete = async () => {
+    setDeleting(true);
     await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
+    toast.success("Monitor deleted");
     window.location.href = "/dashboard/endpoints";
   };
 
@@ -126,8 +136,7 @@ export default function EndpointDetailPage({
   const handleCopyUrl = () => {
     if (endpoint) {
       navigator.clipboard.writeText(endpoint.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success("URL copied to clipboard");
     }
   };
 
@@ -246,9 +255,6 @@ export default function EndpointDetailPage({
                 {endpoint.url}
                 <Copy className="h-3 w-3" />
               </button>
-              {copied && (
-                <span className="text-xs text-emerald-600">Copied!</span>
-              )}
             </div>
           </div>
         </div>
@@ -268,8 +274,14 @@ export default function EndpointDetailPage({
             size="sm"
             className="gap-1.5"
             onClick={handleToggle}
+            disabled={toggling}
           >
-            {endpoint.is_active ? (
+            {toggling ? (
+              <>
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                {endpoint.is_active ? "Pausing..." : "Resuming..."}
+              </>
+            ) : endpoint.is_active ? (
               <>
                 <Pause className="h-3.5 w-3.5" /> Pause
               </>
@@ -284,6 +296,7 @@ export default function EndpointDetailPage({
             size="sm"
             className="gap-1.5 text-destructive hover:text-destructive"
             onClick={onDeleteClick}
+            disabled={deleting}
           >
             <Trash2 className="h-3.5 w-3.5" />
             Delete

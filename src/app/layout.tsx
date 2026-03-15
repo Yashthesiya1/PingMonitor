@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { InsforgeProvider } from "./providers";
 
@@ -163,6 +164,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <InsforgeProvider>{children}</InsforgeProvider>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

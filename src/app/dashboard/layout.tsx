@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { usePreferences } from "@/lib/preferences";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,7 @@ export default function DashboardLayout({
               preferences.pageLayout === "centered" && "max-w-6xl mx-auto"
             )}
           >
-            {children}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </div>
         </main>
       </div>

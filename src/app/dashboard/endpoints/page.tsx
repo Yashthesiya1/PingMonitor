@@ -31,6 +31,7 @@ import {
   Play,
   CheckCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
@@ -45,6 +46,7 @@ export default function EndpointsPage() {
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Endpoint | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchEndpoints = useCallback(async () => {
     try {
@@ -106,13 +108,20 @@ export default function EndpointsPage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await fetchWithAuth(`/api/endpoints/${deleteTarget.id}`, { method: "DELETE" });
-    setEndpoints((prev) => prev.filter((e) => e.id !== deleteTarget.id));
-    setDeleteTarget(null);
-    setMenuOpen(null);
+    setActionLoading(`delete-${deleteTarget.id}`);
+    try {
+      await fetchWithAuth(`/api/endpoints/${deleteTarget.id}`, { method: "DELETE" });
+      setEndpoints((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+      toast.success("Monitor deleted");
+    } finally {
+      setDeleteTarget(null);
+      setMenuOpen(null);
+      setActionLoading(null);
+    }
   };
 
   const handleToggle = async (id: string, isActive: boolean) => {
+    setActionLoading(`toggle-${id}`);
     await fetchWithAuth(`/api/endpoints/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -122,6 +131,8 @@ export default function EndpointsPage() {
       prev.map((e) => (e.id === id ? { ...e, is_active: isActive } : e))
     );
     setMenuOpen(null);
+    setActionLoading(null);
+    toast.success(isActive ? "Monitor resumed" : "Monitor paused");
   };
 
   // Stats

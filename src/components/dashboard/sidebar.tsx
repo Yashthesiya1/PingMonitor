@@ -15,6 +15,7 @@ import {
   LogOut,
   CreditCard,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
@@ -60,6 +61,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await signOut();
+    toast.success("Signed out");
     window.location.href = "/";
   };
 
