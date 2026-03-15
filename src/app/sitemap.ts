@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://pingmonitor.yashai.me";
+  const baseUrl = "https://ping.yashai.me";
 
   return [
     {

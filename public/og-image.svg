@@ -21,7 +21,7 @@
 
   <!-- URL -->
   <rect x="80" y="470" width="280" height="40" rx="10" fill="#6c5ce7"/>
-  <text x="220" y="496" text-anchor="middle" fill="#fff" font-size="15" font-weight="600" font-family="system-ui">pingmonitor.yashai.me</text>
+  <text x="220" y="496" text-anchor="middle" fill="#fff" font-size="15" font-weight="600" font-family="system-ui">ping.yashai.me</text>
 
   <!-- Mini dashboard mockup on right -->
   <rect x="700" y="160" width="380" height="350" rx="16" fill="#f8f8fa" stroke="#e5e5ea" stroke-width="1.5"/>

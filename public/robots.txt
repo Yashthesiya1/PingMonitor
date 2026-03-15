@@ -4,4 +4,4 @@ Disallow: /dashboard/
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://pingmonitor.yashai.me/sitemap.xml
+Sitemap: https://ping.yashai.me/sitemap.xml

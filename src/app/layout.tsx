@@ -7,7 +7,7 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const siteUrl = "https://pingmonitor.yashai.me";
+const siteUrl = "https://ping.yashai.me";
 
 export const viewport: Viewport = {
   themeColor: "#6c5ce7",
