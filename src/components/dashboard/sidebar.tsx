@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { UserProfile } from "@/lib/types";
 
 interface NavItem {
@@ -39,7 +40,7 @@ export function Sidebar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/profile")
+    fetchWithAuth("/api/profile")
       .then((res) => res.json())
       .then(({ data }) => {
         if (data) setProfile(data as UserProfile);

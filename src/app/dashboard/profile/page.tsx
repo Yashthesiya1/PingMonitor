@@ -24,6 +24,7 @@ import {
   LogOut,
   Shield,
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { UserProfile } from "@/lib/types";
 
 export default function ProfilePage() {
@@ -37,8 +38,8 @@ export default function ProfilePage() {
     if (!isLoaded) return;
 
     Promise.all([
-      fetch("/api/profile").then((r) => r.json()),
-      fetch("/api/endpoints").then((r) => r.json()),
+      fetchWithAuth("/api/profile").then((r) => r.json()),
+      fetchWithAuth("/api/endpoints").then((r) => r.json()),
     ])
       .then(([profileRes, endpointsRes]) => {
         if (profileRes.data) setProfile(profileRes.data);

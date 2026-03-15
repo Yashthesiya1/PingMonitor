@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, use } from "react";
 import Link from "next/link";
+import { ChecksDataTable } from "@/components/dashboard/checks-data-table";
 import {
   Card,
   CardContent,
@@ -9,14 +10,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -48,9 +41,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 export default function EndpointDetailPage({
@@ -67,8 +59,8 @@ export default function EndpointDetailPage({
   const fetchData = useCallback(async () => {
     try {
       const [epRes, checksRes] = await Promise.all([
-        fetch("/api/endpoints"),
-        fetch(`/api/endpoints/${id}/checks`),
+        fetchWithAuth("/api/endpoints"),
+        fetchWithAuth(`/api/endpoints/${id}/checks`),
       ]);
       const epData = await epRes.json();
       const checksData = await checksRes.json();
@@ -85,15 +77,17 @@ export default function EndpointDetailPage({
     fetchData();
   }, [fetchData]);
 
-  // Auto-refresh
+  // Auto-refresh based on endpoint's check interval
   useEffect(() => {
-    const timer = setInterval(fetchData, 60000);
+    const intervalMinutes = endpoint?.check_interval || 1;
+    const ms = intervalMinutes * 60 * 1000;
+    const timer = setInterval(fetchData, ms);
     return () => clearInterval(timer);
-  }, [fetchData]);
+  }, [fetchData, endpoint?.check_interval]);
 
   const handleToggle = async () => {
     if (!endpoint) return;
-    await fetch(`/api/endpoints/${id}`, {
+    await fetchWithAuth(`/api/endpoints/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_active: !endpoint.is_active }),
@@ -104,7 +98,7 @@ export default function EndpointDetailPage({
   };
 
   const handleDelete = async () => {
-    await fetch(`/api/endpoints/${id}`, { method: "DELETE" });
+    await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
     window.location.href = "/dashboard/endpoints";
   };
 
@@ -175,27 +169,19 @@ export default function EndpointDetailPage({
     : 0;
   const incidents = checks.filter((c) => !c.is_up).length;
 
-  // Chart data — group by hour
-  const hourlyData: Record<
-    string,
-    { sum: number; count: number; up: number; total: number }
-  > = {};
-  checks.forEach((c) => {
+  // Chart data — each check is a data point
+  const responseChartData = checks.map((c) => {
     const d = new Date(c.checked_at);
-    const key = `${d.getHours().toString().padStart(2, "0")}:00`;
-    if (!hourlyData[key])
-      hourlyData[key] = { sum: 0, count: 0, up: 0, total: 0 };
-    hourlyData[key].sum += c.response_time_ms || 0;
-    hourlyData[key].count += c.response_time_ms ? 1 : 0;
-    hourlyData[key].up += c.is_up ? 1 : 0;
-    hourlyData[key].total += 1;
+    return {
+      time: d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      responseTime: c.response_time_ms || 0,
+      statusCode: c.status_code || 0,
+      isUp: c.is_up,
+    };
   });
-
-  const responseChartData = Object.entries(hourlyData).map(([time, d]) => ({
-    time,
-    avg: d.count > 0 ? Math.round(d.sum / d.count) : 0,
-    uptime: d.total > 0 ? Math.round((d.up / d.total) * 100) : 0,
-  }));
 
   // Uptime bar data — last 30 checks
   const uptimeBars = checks.slice(-60).map((c, i) => ({
@@ -483,21 +469,22 @@ export default function EndpointDetailPage({
                           <div className="rounded-lg border bg-card px-3 py-2 shadow-lg text-xs">
                             <p className="font-medium">{d?.time}</p>
                             <p className="text-muted-foreground mt-1">
-                              Avg:{" "}
+                              Response:{" "}
                               <span className="text-foreground font-medium">
-                                {d?.avg}ms
+                                {d?.responseTime}ms
                               </span>
                             </p>
                             <p className="text-muted-foreground">
-                              Uptime:{" "}
+                              Status:{" "}
                               <span
                                 className={`font-medium ${
-                                  d?.uptime >= 90
+                                  d?.isUp
                                     ? "text-emerald-600"
                                     : "text-red-600"
                                 }`}
                               >
-                                {d?.uptime}%
+                                {d?.isUp ? "Up" : "Down"}
+                                {d?.statusCode ? ` (${d.statusCode})` : ""}
                               </span>
                             </p>
                           </div>
@@ -508,10 +495,12 @@ export default function EndpointDetailPage({
                   />
                   <Area
                     type="monotone"
-                    dataKey="avg"
+                    dataKey="responseTime"
                     stroke="hsl(245, 58%, 51%)"
                     fill="url(#detailGradient)"
                     strokeWidth={2}
+                    dot={{ r: 3, fill: "hsl(245, 58%, 51%)" }}
+                    activeDot={{ r: 5, fill: "hsl(245, 58%, 51%)" }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -597,96 +586,8 @@ export default function EndpointDetailPage({
         </CardContent>
       </Card>
 
-      {/* Recent checks table */}
-      <Card className="rounded-xl">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">
-            Recent Checks
-          </CardTitle>
-          <CardDescription>
-            Last {Math.min(checks.length, 50)} status checks
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {checks.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No checks recorded yet.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                    HTTP Code
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                    Response Time
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
-                    Error
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                    Checked At
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...checks]
-                  .reverse()
-                  .slice(0, 50)
-                  .map((check) => (
-                    <TableRow key={check.id}>
-                      <TableCell>
-                        {check.is_up ? (
-                          <Badge
-                            variant="outline"
-                            className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 text-xs"
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Up
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="gap-1 border-red-200 bg-red-50 text-red-700 text-xs"
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                            Down
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={`text-xs font-mono font-medium ${
-                            check.status_code && check.status_code < 400
-                              ? "text-emerald-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {check.status_code || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
-                        {check.response_time_ms
-                          ? `${check.response_time_ms}ms`
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {check.error_message || "—"}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
-                        {new Date(check.checked_at).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* Recent checks datatable */}
+      <ChecksDataTable checks={checks} />
     </div>
   );
 }

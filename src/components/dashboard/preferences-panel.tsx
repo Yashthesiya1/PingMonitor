@@ -11,6 +11,13 @@ import {
   type SidebarCollapse,
 } from "@/lib/preferences";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PreferencesPanelProps {
   onClose: () => void;
@@ -57,44 +64,62 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
           <label className="text-xs font-medium text-foreground">
             Theme Preset
           </label>
-          <div className="mt-2 relative">
-            <select
+          <div className="mt-2">
+            <Select
               value={preferences.themePreset}
-              onChange={(e) =>
-                updatePreference("themePreset", e.target.value as ThemePreset)
+              onValueChange={(v) =>
+                updatePreference("themePreset", v as ThemePreset)
               }
-              className="w-full appearance-none rounded-lg border bg-background px-3 py-2 pl-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              {themePresets.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            <div
-              className={cn(
-                "absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full",
-                themePresets.find((p) => p.value === preferences.themePreset)
-                  ?.color
-              )}
-            />
+              <SelectTrigger className="w-full">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full shrink-0",
+                      themePresets.find(
+                        (p) => p.value === preferences.themePreset
+                      )?.color
+                    )}
+                  />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {themePresets.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn("h-3 w-3 rounded-full shrink-0", p.color)}
+                      />
+                      {p.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Font */}
         <div>
           <label className="text-xs font-medium text-foreground">Fonts</label>
-          <select
-            value={preferences.font}
-            onChange={(e) => updatePreference("font", e.target.value)}
-            className="mt-2 w-full appearance-none rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {fonts.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2">
+            <Select
+              value={preferences.font}
+              onValueChange={(v) => updatePreference("font", v)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {fonts.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Theme Mode */}

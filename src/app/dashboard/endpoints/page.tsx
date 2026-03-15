@@ -21,6 +21,7 @@ import {
   Play,
   CheckCircle2,
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 export default function EndpointsPage() {
@@ -36,7 +37,7 @@ export default function EndpointsPage() {
 
   const fetchEndpoints = useCallback(async () => {
     try {
-      const res = await fetch("/api/endpoints");
+      const res = await fetchWithAuth("/api/endpoints");
       const { data } = await res.json();
       if (data) setEndpoints(data);
     } finally {
@@ -48,7 +49,7 @@ export default function EndpointsPage() {
     const results: Record<string, EndpointCheck[]> = {};
     await Promise.all(
       endpointIds.map(async (id) => {
-        const res = await fetch(`/api/endpoints/${id}/checks`);
+        const res = await fetchWithAuth(`/api/endpoints/${id}/checks`);
         const { data } = await res.json();
         results[id] = data || [];
       })
@@ -56,24 +57,50 @@ export default function EndpointsPage() {
     setChecksMap(results);
   }, []);
 
-  useEffect(() => {
-    if (isLoaded) fetchEndpoints();
-  }, [isLoaded, fetchEndpoints]);
+  const refreshAll = useCallback(async () => {
+    const res = await fetchWithAuth("/api/endpoints");
+    const { data } = await res.json();
+    if (data) {
+      setEndpoints(data);
+      const ids = data.map((e: Endpoint) => e.id);
+      if (ids.length > 0) {
+        const results: Record<string, EndpointCheck[]> = {};
+        await Promise.all(
+          ids.map(async (id: string) => {
+            const r = await fetchWithAuth(`/api/endpoints/${id}/checks`);
+            const json = await r.json();
+            results[id] = json.data || [];
+          })
+        );
+        setChecksMap(results);
+      }
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    if (endpoints.length > 0) {
-      fetchChecks(endpoints.map((e) => e.id));
-    }
-  }, [endpoints, fetchChecks]);
+    if (isLoaded) refreshAll();
+  }, [isLoaded, refreshAll]);
+
+  // Auto-refresh based on shortest endpoint interval
+  useEffect(() => {
+    if (endpoints.length === 0) return;
+    const shortestInterval = Math.min(
+      ...endpoints.map((e) => e.check_interval || 1)
+    );
+    const ms = shortestInterval * 60 * 1000;
+    const timer = setInterval(refreshAll, ms);
+    return () => clearInterval(timer);
+  }, [endpoints, refreshAll]);
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/endpoints/${id}`, { method: "DELETE" });
+    await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
     setEndpoints((prev) => prev.filter((e) => e.id !== id));
     setMenuOpen(null);
   };
 
   const handleToggle = async (id: string, isActive: boolean) => {
-    await fetch(`/api/endpoints/${id}`, {
+    await fetchWithAuth(`/api/endpoints/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_active: isActive }),

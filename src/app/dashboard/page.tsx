@@ -31,6 +31,7 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -41,49 +42,46 @@ export default function DashboardPage() {
   );
   const [loading, setLoading] = useState(true);
 
-  const fetchEndpoints = useCallback(async () => {
+  const refreshAll = useCallback(async () => {
     try {
-      const res = await fetch("/api/endpoints");
+      const res = await fetchWithAuth("/api/endpoints");
       const { data } = await res.json();
-      if (data) setEndpoints(data);
+      if (data) {
+        setEndpoints(data);
+        if (data.length > 0) {
+          const results: Record<string, EndpointCheck[]> = {};
+          await Promise.all(
+            data.map(async (ep: Endpoint) => {
+              const r = await fetchWithAuth(`/api/endpoints/${ep.id}/checks`);
+              const json = await r.json();
+              results[ep.id] = json.data || [];
+            })
+          );
+          setChecksMap(results);
+        }
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchChecks = useCallback(async (endpointIds: string[]) => {
-    const results: Record<string, EndpointCheck[]> = {};
-    await Promise.all(
-      endpointIds.map(async (id) => {
-        const res = await fetch(`/api/endpoints/${id}/checks`);
-        const { data } = await res.json();
-        results[id] = data || [];
-      })
+  useEffect(() => {
+    if (isLoaded) refreshAll();
+  }, [isLoaded, refreshAll]);
+
+  // Auto-refresh based on shortest endpoint interval
+  useEffect(() => {
+    if (endpoints.length === 0) return;
+    const shortestInterval = Math.min(
+      ...endpoints.map((e) => e.check_interval || 1)
     );
-    setChecksMap(results);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      fetchEndpoints();
-    }
-  }, [isLoaded, fetchEndpoints]);
-
-  useEffect(() => {
-    if (endpoints.length > 0) {
-      fetchChecks(endpoints.map((e) => e.id));
-    }
-  }, [endpoints, fetchChecks]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchEndpoints();
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [fetchEndpoints]);
+    const ms = shortestInterval * 60 * 1000;
+    const timer = setInterval(refreshAll, ms);
+    return () => clearInterval(timer);
+  }, [endpoints, refreshAll]);
 
   const handleDeleteEndpoint = async (id: string) => {
-    await fetch(`/api/endpoints/${id}`, { method: "DELETE" });
+    await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
     setEndpoints((prev) => prev.filter((e) => e.id !== id));
     setChecksMap((prev) => {
       const next = { ...prev };

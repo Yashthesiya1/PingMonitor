@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   Globe,
   CheckSquare,
@@ -19,6 +26,7 @@ import {
   Bell,
   MapPin,
 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { cn } from "@/lib/utils";
 
 const INTERVALS = [
@@ -60,7 +68,7 @@ export default function NewEndpointPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/endpoints", {
+      const res = await fetchWithAuth("/api/endpoints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -284,17 +292,18 @@ export default function NewEndpointPage() {
             </div>
           </div>
           <div className="mt-4">
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="w-full appearance-none rounded-lg border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {REGIONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.flag} {r.label}
-                </option>
-              ))}
-            </select>
+            <Select value={region} onValueChange={setRegion}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select region" />
+              </SelectTrigger>
+              <SelectContent>
+                {REGIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.flag} {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
