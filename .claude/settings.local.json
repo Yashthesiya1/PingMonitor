@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which insforge:*)",
+      "Bash(npm list:*)",
+      "Bash(insforge --help 2>&1 | head -40)",
+      "Bash(insforge docs:*)",
+      "Bash(insforge current:*)",
+      "Bash(insforge db:*)",
+      "Bash(insforge schedules:*)",
+      "Bash(insforge metadata:*)",
+      "Bash(insforge functions:*)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack 2>&1)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Read(//d/My_Work/**)",
+      "Bash(npx create-next-app@latest ping-monitor-temp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(cd \"D:/My_Work\" && echo \"n\" | npx create-next-app@latest ping-monitor-temp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack 2>&1)",
+      "Bash(cp -r \"D:/My_Work/ping-monitor-temp/\"* \"D:/My_Work/PingMonitor/\" && cp \"D:/My_Work/ping-monitor-temp/\".* \"D:/My_Work/PingMonitor/\" 2>/dev/null; rm -rf \"D:/My_Work/ping-monitor-temp\" && ls \"D:/My_Work/PingMonitor\")",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && rm -rf node_modules package-lock.json && npm install 2>&1 | tail -10)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && insforge metadata --json 2>&1 | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if k not in ['ai']}, indent=2\\)\\)\" 2>/dev/null || insforge metadata --json 2>&1 | head -30)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -30)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm install @radix-ui/react-label @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-avatar @radix-ui/react-separator @radix-ui/react-tabs @radix-ui/react-tooltip @radix-ui/react-scroll-area @radix-ui/react-slot @radix-ui/react-select 2>&1)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -40)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && sed -i 's/edgeFunctionToken: token,/edgeFunctionToken: token ?? undefined,/g' src/app/api/admin/stats/route.ts src/app/api/admin/users/route.ts src/app/api/endpoints/\\\\[id\\\\]/checks/route.ts src/app/api/endpoints/\\\\[id\\\\]/route.ts src/app/api/endpoints/route.ts)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -15)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -20)"
+    ]
+  }
+}
