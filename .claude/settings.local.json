@@ -23,7 +23,8 @@
       "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -40)",
       "Bash(cd \"D:/My_Work/PingMonitor\" && sed -i 's/edgeFunctionToken: token,/edgeFunctionToken: token ?? undefined,/g' src/app/api/admin/stats/route.ts src/app/api/admin/users/route.ts src/app/api/endpoints/\\\\[id\\\\]/checks/route.ts src/app/api/endpoints/\\\\[id\\\\]/route.ts src/app/api/endpoints/route.ts)",
       "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -15)",
-      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -20)"
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -20)",
+      "Bash(cd \"D:/My_Work/PingMonitor\" && npm run build 2>&1 | tail -25)"
     ]
   }
 }

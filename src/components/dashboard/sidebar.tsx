@@ -2,91 +2,218 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@insforge/nextjs";
+import { useUser, useAuth } from "@insforge/nextjs";
 import {
   Activity,
   LayoutDashboard,
+  BarChart3,
+  Globe,
   Shield,
+  List,
+  MoreVertical,
+  User,
+  LogOut,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UserButton } from "@insforge/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UserProfile } from "@/lib/types";
+
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavGroup {
+  label?: string;
+  items: NavItem[];
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
+  const { signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      fetch("/api/profile")
-        .then((res) => res.json())
-        .then(({ data }) => {
-          if (data) setProfile(data as UserProfile);
-        });
+    fetch("/api/profile")
+      .then((res) => res.json())
+      .then(({ data }) => {
+        if (data) setProfile(data as UserProfile);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
     }
-  }, [user?.id]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = "/";
+  };
 
   const isAdmin = profile?.role === "admin";
 
-  const navItems = [
+  const navGroups: NavGroup[] = [
     {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
+      items: [
+        { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { title: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
+      ],
+    },
+    {
+      label: "Monitor",
+      items: [
+        { title: "Endpoints", href: "/dashboard/endpoints", icon: Globe },
+        { title: "Checks", href: "/dashboard/checks", icon: List },
+      ],
     },
     ...(isAdmin
       ? [
           {
-            title: "Admin",
-            href: "/admin",
-            icon: Shield,
+            label: "Admin",
+            items: [
+              { title: "Overview", href: "/admin", icon: Shield },
+            ],
           },
         ]
       : []),
   ];
 
+  const userInitial = user?.profile?.name
+    ? user.profile.name.charAt(0).toUpperCase()
+    : user?.email?.charAt(0).toUpperCase() || "U";
+
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-card">
+    <div className="flex h-screen w-[240px] flex-col bg-[hsl(var(--sidebar))] border-r border-[hsl(var(--sidebar-border))]">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Activity className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">PingMonitor</span>
+      <div className="flex h-14 items-center gap-2.5 px-5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Activity className="h-4 w-4" />
+        </div>
+        <span className="text-[15px] font-semibold text-[hsl(var(--sidebar-foreground))]">
+          PingMonitor
+        </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              pathname === item.href
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
+        {navGroups.map((group, gi) => (
+          <div key={gi} className={cn(gi > 0 && "mt-5")}>
+            {group.label && (
+              <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                {group.label}
+              </p>
             )}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.title}
-          </Link>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-[hsl(var(--sidebar-foreground))]/70 hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-accent-foreground))]"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         ))}
       </nav>
 
       {/* User section */}
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3">
-          <UserButton />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user?.profile?.name || user?.email}
+      <div className="relative border-t border-[hsl(var(--sidebar-border))] p-3" ref={menuRef}>
+        {/* User menu popup */}
+        {showUserMenu && (
+          <div className="absolute bottom-full left-3 right-3 mb-1 rounded-xl border bg-card shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden">
+            {/* User info header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+                {userInitial}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.profile?.name || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
+            {/* Menu items */}
+            <div className="py-1">
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2.5 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <User className="h-4 w-4 text-muted-foreground" />
+                Account
+              </Link>
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2.5 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                Billing
+              </Link>
+            </div>
+
+            <div className="border-t py-1">
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+                Log out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* User button */}
+        <button
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors",
+            showUserMenu
+              ? "bg-[hsl(var(--sidebar-accent))]"
+              : "hover:bg-[hsl(var(--sidebar-accent))]"
+          )}
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+            {userInitial}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-[13px] font-medium truncate text-[hsl(var(--sidebar-foreground))]">
+              {user?.profile?.name || "User"}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {profile?.credits ?? 0} credits
+            <p className="text-[11px] truncate text-muted-foreground">
+              {user?.email}
             </p>
           </div>
-        </div>
+          <MoreVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
       </div>
     </div>
   );

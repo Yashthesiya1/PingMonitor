@@ -45,7 +45,15 @@ export async function POST(request: NextRequest) {
     const { client, userId } = await getAuthClient();
 
     const body = await request.json();
-    const { name, url } = body;
+    const {
+      name,
+      url,
+      check_interval = 5,
+      notify_email = true,
+      notify_sms = false,
+      notify_push = false,
+      monitor_region = "auto",
+    } = body;
 
     if (!name || !url) {
       return NextResponse.json(
@@ -75,6 +83,11 @@ export async function POST(request: NextRequest) {
           name,
           url,
           method: "GET",
+          check_interval,
+          notify_email,
+          notify_sms,
+          notify_push,
+          monitor_region,
         },
       ])
       .select();

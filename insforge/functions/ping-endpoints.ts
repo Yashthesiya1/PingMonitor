@@ -17,11 +17,9 @@ export default async function (req: Request): Promise<Response> {
   });
 
   try {
-    // Get all active endpoints
+    // Use RPC to bypass RLS and get all active endpoints
     const { data: endpoints, error: fetchError } = await client.database
-      .from("endpoints")
-      .select("*")
-      .eq("is_active", true);
+      .rpc("get_active_endpoints");
 
     if (fetchError) {
       return new Response(
@@ -48,7 +46,7 @@ export default async function (req: Request): Promise<Response> {
 
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const timeout = setTimeout(() => controller.abort(), 10000);
 
           const response = await fetch(endpoint.url, {
             method: endpoint.method || "GET",
@@ -69,16 +67,14 @@ export default async function (req: Request): Promise<Response> {
           isUp = false;
         }
 
-        // Store the check result
-        await client.database.from("endpoint_checks").insert([
-          {
-            endpoint_id: endpoint.id,
-            status_code: statusCode,
-            response_time_ms: responseTimeMs,
-            is_up: isUp,
-            error_message: errorMessage,
-          },
-        ]);
+        // Use RPC to bypass RLS and insert check result
+        await client.database.rpc("insert_check", {
+          p_endpoint_id: endpoint.id,
+          p_status_code: statusCode,
+          p_response_time_ms: responseTimeMs,
+          p_is_up: isUp,
+          p_error_message: errorMessage,
+        });
 
         return {
           endpoint_id: endpoint.id,

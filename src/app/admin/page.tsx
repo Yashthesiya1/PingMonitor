@@ -68,13 +68,12 @@ export default function AdminPage() {
   if (!isLoaded || loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-28" />
+        <div className="grid gap-4 grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-[140px] rounded-xl" />
           ))}
         </div>
-        <Skeleton className="h-64" />
+        <Skeleton className="h-[300px] rounded-xl" />
       </div>
     );
   }
@@ -82,7 +81,7 @@ export default function AdminPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Card className="max-w-md">
+        <Card className="max-w-md rounded-xl">
           <CardContent className="pt-6 text-center">
             <p className="text-destructive font-medium">Access Denied</p>
             <p className="text-sm text-muted-foreground mt-2">
@@ -98,101 +97,98 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Platform overview and user management
-        </p>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
+      {/* Stat cards */}
+      <div className="grid gap-4 grid-cols-4">
+        <Card className="rounded-xl border bg-card shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Users
+              </p>
+              <Users className="h-4 w-4 text-muted-foreground/50" />
+            </div>
+            <p className="mt-2 text-3xl font-bold">{stats?.total_users || 0}</p>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Registered on the platform
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Endpoints</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+
+        <Card className="rounded-xl border bg-card shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-muted-foreground">
+                Endpoints
+              </p>
+              <Activity className="h-4 w-4 text-muted-foreground/50" />
+            </div>
+            <p className="mt-2 text-3xl font-bold">
               {stats?.total_endpoints || 0}
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Zap className="h-3 w-3 text-emerald-500" />
+              <span>{stats?.active_endpoints || 0} active</span>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-500">
-              {stats?.active_endpoints || 0}
+
+        <Card className="rounded-xl border bg-card shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-muted-foreground">
+                Checks Today
+              </p>
+              <TrendingUp className="h-4 w-4 text-muted-foreground/50" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Checks Today</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+            <p className="mt-2 text-3xl font-bold">
               {stats?.total_checks_today || 0}
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>
+                Avg {Math.round(stats?.avg_response_time || 0)}ms response
+              </span>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(stats?.avg_response_time || 0)}ms
+
+        <Card className="rounded-xl border bg-card shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Credits
+              </p>
+              <CreditCard className="h-4 w-4 text-muted-foreground/50" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Credits
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+            <p className="mt-2 text-3xl font-bold">
               {stats?.total_credits || 0}
+            </p>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Across all users
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Uptime card */}
-      <Card>
+      {/* Platform Uptime */}
+      <Card className="rounded-xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>Platform Uptime (Today)</CardTitle>
+          <CardTitle className="text-base font-semibold">
+            Platform Uptime (Today)
+          </CardTitle>
           <CardDescription>
             Overall success rate across all monitored endpoints
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="text-4xl font-bold text-emerald-500">
+          <div className="flex items-center gap-6">
+            <div className="text-4xl font-bold text-emerald-600">
               {stats?.uptime_percentage || 0}%
             </div>
             <div className="flex-1">
-              <div className="h-3 rounded-full bg-muted overflow-hidden">
+              <div className="h-2.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
                   style={{
                     width: `${stats?.uptime_percentage || 0}%`,
                   }}
@@ -203,22 +199,36 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* Users table */}
-      <Card>
+      {/* Users Table */}
+      <Card className="rounded-xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>All registered users and their usage</CardDescription>
+          <CardTitle className="text-base font-semibold">Users</CardTitle>
+          <CardDescription>
+            All registered users and their usage
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Credits</TableHead>
-                <TableHead>Endpoints</TableHead>
-                <TableHead>Max Endpoints</TableHead>
-                <TableHead>Joined</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
+                  User ID
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
+                  Role
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
+                  Credits
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
+                  Endpoints
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
+                  Max
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
+                  Joined
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -226,7 +236,7 @@ export default function AdminPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="text-center text-muted-foreground"
+                    className="text-center text-muted-foreground py-8"
                   >
                     No users yet
                   </TableCell>
@@ -235,21 +245,26 @@ export default function AdminPage() {
                 users.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-mono text-xs">
-                      {u.user_id.slice(0, 8)}...
+                      {u.user_id.slice(0, 12)}...
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          u.role === "admin" ? "default" : "secondary"
-                        }
+                        variant={u.role === "admin" ? "default" : "secondary"}
+                        className="text-xs"
                       >
                         {u.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>{u.credits}</TableCell>
-                    <TableCell>{u.endpoint_count}</TableCell>
-                    <TableCell>{u.max_endpoints}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-right font-medium">
+                      {u.credits}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {u.endpoint_count}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {u.max_endpoints}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground text-xs">
                       {new Date(u.created_at).toLocaleDateString()}
                     </TableCell>
                   </TableRow>

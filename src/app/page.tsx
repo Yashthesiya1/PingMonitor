@@ -9,23 +9,25 @@ import { Activity, BarChart3, Shield, Zap } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">PingMonitor</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+              <Activity className="h-4.5 w-4.5" />
+            </div>
+            <span className="text-[17px] font-semibold">PingMonitor</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <SignedOut>
               <SignInButton>
-                <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton>
-                <button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                <button className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors shadow-sm">
                   Get Started
                 </button>
               </SignUpButton>
@@ -33,7 +35,7 @@ export default function Home() {
             <SignedIn>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors shadow-sm"
               >
                 Dashboard
               </Link>
@@ -43,9 +45,9 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="container flex flex-col items-center justify-center gap-6 pt-24 pb-16 text-center">
-        <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm text-muted-foreground">
-          <Zap className="mr-1 h-3 w-3" />
+      <section className="container flex flex-col items-center justify-center gap-6 pt-28 pb-20 text-center">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+          <Zap className="h-3.5 w-3.5" />
           Real-time monitoring every 60 seconds
         </div>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
@@ -53,14 +55,14 @@ export default function Home() {
           <br />
           <span className="text-primary">With Confidence</span>
         </h1>
-        <p className="max-w-[600px] text-lg text-muted-foreground">
+        <p className="max-w-[560px] text-lg text-muted-foreground leading-relaxed">
           Keep track of your API endpoints in real-time. Get instant visibility
-          into uptime, response times, and performance — all in one dashboard.
+          into uptime, response times, and performance.
         </p>
-        <div className="flex gap-4">
+        <div className="flex gap-3 mt-2">
           <SignedOut>
             <SignUpButton>
-              <button className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              <button className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white hover:bg-primary/90 transition-colors shadow-sm">
                 Start Monitoring — Free
               </button>
             </SignUpButton>
@@ -68,7 +70,7 @@ export default function Home() {
           <SignedIn>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white hover:bg-primary/90 transition-colors shadow-sm"
             >
               Go to Dashboard
             </Link>
@@ -77,34 +79,40 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="container py-16">
-        <div className="grid gap-8 md:grid-cols-3">
-          <div className="rounded-lg border bg-card p-6">
-            <Activity className="h-10 w-10 text-primary mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
+      <section className="container py-20">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="rounded-xl border bg-white p-7 shadow-sm">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-[15px] font-semibold mb-2">
               Real-Time Monitoring
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Your endpoints are checked every minute. Know instantly when
               something goes down.
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-6">
-            <BarChart3 className="h-10 w-10 text-primary mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
+          <div className="rounded-xl border bg-white p-7 shadow-sm">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <BarChart3 className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-[15px] font-semibold mb-2">
               Beautiful Analytics
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Visualize uptime, response times, and status history with clear,
               interactive charts.
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-6">
-            <Shield className="h-10 w-10 text-primary mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
+          <div className="rounded-xl border bg-white p-7 shadow-sm">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Shield className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-[15px] font-semibold mb-2">
               Up to 7 Endpoints
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Monitor up to 7 API endpoints per account. Perfect for small teams
               and indie developers.
             </p>
@@ -116,8 +124,10 @@ export default function Home() {
       <footer className="border-t py-8">
         <div className="container flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            <span>PingMonitor</span>
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-white">
+              <Activity className="h-3.5 w-3.5" />
+            </div>
+            <span className="font-medium">PingMonitor</span>
           </div>
           <p>Built with InsForge</p>
         </div>

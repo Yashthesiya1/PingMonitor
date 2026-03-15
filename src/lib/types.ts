@@ -5,6 +5,11 @@ export interface Endpoint {
   url: string;
   method: string;
   is_active: boolean;
+  check_interval: number;
+  notify_email: boolean;
+  notify_sms: boolean;
+  notify_push: boolean;
+  monitor_region: string;
   created_at: string;
   updated_at: string;
 }
