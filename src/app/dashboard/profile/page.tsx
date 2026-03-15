@@ -27,6 +27,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { UserProfile } from "@/lib/types";
 
@@ -41,10 +42,6 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -68,19 +65,16 @@ export default function ProfilePage() {
   const startEditing = () => {
     setEditName(profile?.display_name || user?.profile?.name || "");
     setEditing(true);
-    setSaveMessage(null);
   };
 
   const cancelEditing = () => {
     setEditing(false);
-    setSaveMessage(null);
   };
 
   const handleSave = async () => {
     if (!editName.trim()) return;
 
     setSaving(true);
-    setSaveMessage(null);
 
     try {
       const res = await fetchWithAuth("/api/profile", {
@@ -90,17 +84,14 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
-        setSaveMessage({ type: "success", text: "Profile updated! Refresh to see changes across the app." });
+        toast.success("Profile updated");
         setEditing(false);
       } else {
         const data = await res.json();
-        setSaveMessage({
-          type: "error",
-          text: data.error || "Failed to update profile",
-        });
+        toast.error(data.error || "Failed to update profile");
       }
     } catch {
-      setSaveMessage({ type: "error", text: "Something went wrong" });
+      toast.error("Something went wrong");
     } finally {
       setSaving(false);
     }
@@ -121,19 +112,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Save message */}
-      {saveMessage && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            saveMessage.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-destructive/30 bg-destructive/5 text-destructive"
-          }`}
-        >
-          {saveMessage.text}
-        </div>
-      )}
-
       {/* Profile Header */}
       <Card className="rounded-xl border bg-card shadow-sm">
         <CardContent className="p-6">

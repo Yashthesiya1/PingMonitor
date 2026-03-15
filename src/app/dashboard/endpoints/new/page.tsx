@@ -27,8 +27,10 @@ import {
   Activity,
   Search,
 } from "lucide-react";
+import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 import {
   SERVICE_CATALOG,
   SERVICE_CATEGORIES,
@@ -96,6 +98,11 @@ export default function NewEndpointPage() {
     setUrl(service.statusUrl);
   };
 
+  const httpSchema = z.object({
+    name: z.string().min(1, "Name is required").max(100, "Name too long"),
+    url: z.string().url("Please enter a valid URL").refine((v) => v !== "https://", "Please enter a URL"),
+  });
+
   const handleSubmit = async () => {
     const finalName = monitorType === "status" && selectedService
       ? selectedService.name
@@ -104,13 +111,17 @@ export default function NewEndpointPage() {
       ? selectedService.statusUrl
       : url.trim();
 
-    if (!finalName || !finalUrl || finalUrl === "https://") {
-      setError(
-        monitorType === "status"
-          ? "Please select a service"
-          : "Please enter a name and URL"
-      );
+    if (monitorType === "status" && !selectedService) {
+      setError("Please select a service to monitor");
       return;
+    }
+
+    if (monitorType === "http") {
+      const result = httpSchema.safeParse({ name: finalName, url: finalUrl });
+      if (!result.success) {
+        setError(result.error.issues[0].message);
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -133,10 +144,11 @@ export default function NewEndpointPage() {
       });
 
       if (res.ok) {
+        toast.success("Monitor created");
         router.push("/dashboard/endpoints");
       } else {
         const data = await res.json();
-        setError(data.error || "Failed to create monitor");
+        toast.error(data.error || "Failed to create monitor");
       }
     } catch {
       setError("Something went wrong");

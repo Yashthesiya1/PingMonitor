@@ -9,7 +9,7 @@ export function RoadmapTimeline() {
       className="w-full max-w-4xl mx-auto"
     >
       {/* Background */}
-      <rect width="900" height="420" rx="20" fill="hsl(240, 4.8%, 95.9%)" />
+      <rect width="900" height="420" rx="20" className="fill-muted" />
 
       {/* Main timeline line */}
       <line x1="80" y1="210" x2="820" y2="210" stroke="hsl(245, 58%, 51%)" strokeWidth="3" strokeLinecap="round" opacity="0.2" />
