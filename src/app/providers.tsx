@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/auth-guard";
 
 export function InsforgeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <InsforgeBrowserProvider client={insforge} afterSignInUrl="/dashboard">
+    <InsforgeBrowserProvider client={insforge} afterSignInUrl="/dashboard/endpoints">
       <PreferencesProvider>
         <AuthGuard>{children}</AuthGuard>
       </PreferencesProvider>

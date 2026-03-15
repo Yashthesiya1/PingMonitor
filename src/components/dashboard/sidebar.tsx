@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useUser, useAuth } from "@insforge/nextjs";
 import {
   Activity,
-  LayoutDashboard,
   BarChart3,
   Globe,
   Shield,
@@ -68,15 +67,9 @@ export function Sidebar() {
   const navGroups: NavGroup[] = [
     {
       items: [
-        { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { title: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
-      ],
-    },
-    {
-      label: "Monitor",
-      items: [
         { title: "Endpoints", href: "/dashboard/endpoints", icon: Globe },
         { title: "Checks", href: "/dashboard/checks", icon: List },
+        { title: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
       ],
     },
     ...(isAdmin
@@ -141,7 +134,7 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="relative border-t border-[hsl(var(--sidebar-border))] p-3" ref={menuRef}>
+      <div className="relative border-t border-[hsl(var(--sidebar-border))] p-3 mb-3" ref={menuRef}>
         {/* User menu popup */}
         {showUserMenu && (
           <div className="absolute bottom-full left-3 right-3 mb-1 rounded-xl border bg-card shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden">

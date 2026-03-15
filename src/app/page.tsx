@@ -6,10 +6,12 @@ import {
   SignUpButton,
 } from "@insforge/nextjs";
 import { Activity, BarChart3, Shield, Zap } from "lucide-react";
+import { AutoRedirectIfSignedIn } from "@/components/auto-redirect";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
+      <AutoRedirectIfSignedIn />
       {/* Navbar */}
       <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container flex h-16 items-center justify-between">
