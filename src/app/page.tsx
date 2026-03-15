@@ -21,6 +21,7 @@ import {
 import { AutoRedirectIfSignedIn } from "@/components/auto-redirect";
 import { PingMonitorLogo, PingMonitorLogoMark } from "@/components/logo";
 import { HowItWorksDiagram } from "@/components/how-it-works-diagram";
+import { RoadmapTimeline } from "@/components/roadmap-section";
 
 export default function Home() {
   return (
@@ -45,6 +46,9 @@ export default function Home() {
             </a>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
+            </a>
+            <a href="#roadmap" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Roadmap
             </a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -434,6 +438,113 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Roadmap */}
+      <section id="roadmap" className="border-t bg-muted/20 py-16 sm:py-24">
+        <div className="container px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-12">
+            <p className="text-xs sm:text-sm font-semibold text-primary mb-2 sm:mb-3 uppercase tracking-wider">
+              Roadmap
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+              What&apos;s coming next
+            </h2>
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground max-w-[500px] mx-auto px-4">
+              We&apos;re building in public. Here&apos;s what&apos;s on our roadmap — and we ship fast.
+            </p>
+          </div>
+
+          {/* SVG Timeline — hidden on small mobile */}
+          <div className="hidden sm:block overflow-x-auto mb-12">
+            <RoadmapTimeline />
+          </div>
+
+          {/* Mobile-friendly cards version */}
+          <div className="grid grid-cols-1 sm:hidden gap-4">
+            {[
+              {
+                phase: "v1.0",
+                status: "Live",
+                color: "bg-primary",
+                items: ["HTTP Monitoring", "AI Service Status", "Real-time Charts", "Incident Detection", "Email Alerts"],
+              },
+              {
+                phase: "Phase 2",
+                status: "Next",
+                color: "bg-orange-500",
+                items: ["Public Status Pages", "Slack / Discord", "Webhook Integrations", "Recovery Alerts"],
+              },
+              {
+                phase: "Phase 3",
+                status: "Planned",
+                color: "bg-muted-foreground",
+                items: ["SSL Monitoring", "DNS Monitoring", "Keyword Checks", "Cron Heartbeats"],
+              },
+              {
+                phase: "Phase 4",
+                status: "Future",
+                color: "bg-muted-foreground",
+                items: ["Stripe Billing", "Team Management", "Public REST API", "AI Insights"],
+              },
+            ].map((phase, i) => (
+              <div key={i} className="rounded-xl border bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`${phase.color} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full`}>
+                    {phase.status.toUpperCase()}
+                  </span>
+                  <span className="text-sm font-semibold">{phase.phase}</span>
+                </div>
+                <ul className="space-y-1.5">
+                  {phase.items.map((item, j) => (
+                    <li key={j} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className={`h-1.5 w-1.5 rounded-full ${i === 0 ? "bg-emerald-500" : phase.color}`} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Detailed feature cards below timeline */}
+          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+            {[
+              {
+                title: "Public Status Pages",
+                desc: "Share a branded status page with your users. Custom domain support.",
+                tag: "Phase 2",
+                tagColor: "bg-orange-500",
+              },
+              {
+                title: "SSL & DNS Monitoring",
+                desc: "Track certificate expiry and DNS changes. Get alerts before they break.",
+                tag: "Phase 3",
+                tagColor: "bg-muted-foreground",
+              },
+              {
+                title: "Team Collaboration",
+                desc: "Invite team members, assign roles, and share monitors across your org.",
+                tag: "Phase 4",
+                tagColor: "bg-muted-foreground",
+              },
+              {
+                title: "AI-Powered Insights",
+                desc: "Anomaly detection, predictive alerts, and weekly AI summaries.",
+                tag: "Phase 5",
+                tagColor: "bg-muted-foreground",
+              },
+            ].map((card, i) => (
+              <div key={i} className="rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+                <span className={`${card.tagColor} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full`}>
+                  {card.tag.toUpperCase()}
+                </span>
+                <h3 className="text-sm font-semibold mt-3 mb-1.5">{card.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t bg-gradient-to-b from-primary/5 to-background py-16 sm:py-24">
         <div className="container px-4 sm:px-6 lg:px-8 text-center">
@@ -475,6 +586,7 @@ export default function Home() {
               <a href="#features" className="hover:text-foreground transition-colors">Features</a>
               <a href="#services" className="hover:text-foreground transition-colors">Services</a>
               <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+              <a href="#roadmap" className="hover:text-foreground transition-colors">Roadmap</a>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">Built with InsForge</p>
           </div>
