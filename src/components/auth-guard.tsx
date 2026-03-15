@@ -2,43 +2,58 @@
 
 import { useAuth } from "@insforge/nextjs";
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
+const PUBLIC_ROUTES = ["/"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, signOut } = useAuth();
   const pathname = usePathname();
-  const wasSignedIn = useRef(false);
+  const router = useRouter();
+  const hasEverBeenSignedIn = useRef(false);
+  const initialLoadDone = useRef(false);
 
-  // Track if user was previously signed in
+  const isProtected = PROTECTED_PREFIXES.some((p) =>
+    pathname.startsWith(p)
+  );
+
+  // Track if user has ever been signed in during this session
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      wasSignedIn.current = true;
+      hasEverBeenSignedIn.current = true;
+      initialLoadDone.current = true;
+    }
+    if (isLoaded && isSignedIn === false) {
+      // Only mark initial load done after a small delay
+      // to avoid false negatives during token sync
+      const timer = setTimeout(() => {
+        initialLoadDone.current = true;
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [isLoaded, isSignedIn]);
 
-  // Auto-logout when token expires (was signed in, now isn't)
+  // Redirect unauthenticated users away from protected routes
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !initialLoadDone.current) return;
 
-    const isProtected = PROTECTED_PREFIXES.some((p) =>
-      pathname.startsWith(p)
-    );
-
-    if (isProtected && wasSignedIn.current && isSignedIn === false) {
-      signOut().then(() => {
-        window.location.href = "/";
-      });
+    if (isProtected && isSignedIn === false) {
+      // If they were previously signed in, token expired — logout cleanly
+      if (hasEverBeenSignedIn.current) {
+        signOut().then(() => {
+          window.location.href = "/";
+        });
+      } else {
+        // Never signed in, just trying to access protected route
+        router.replace("/");
+      }
     }
-  }, [isLoaded, isSignedIn, pathname, signOut]);
+  }, [isLoaded, isSignedIn, isProtected, signOut, router]);
 
-  // Periodically check auth status by hitting our API
+  // Periodically check auth status on protected routes
   useEffect(() => {
-    const isProtected = PROTECTED_PREFIXES.some((p) =>
-      pathname.startsWith(p)
-    );
-    if (!isProtected) return;
+    if (!isProtected || !isSignedIn) return;
 
     const checkAuth = async () => {
       try {
@@ -52,10 +67,21 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Check every 2 minutes
     const timer = setInterval(checkAuth, 2 * 60 * 1000);
     return () => clearInterval(timer);
-  }, [pathname, signOut]);
+  }, [isProtected, isSignedIn, signOut]);
+
+  // On protected routes, don't render children until auth is confirmed
+  if (isProtected && (!isLoaded || isSignedIn !== true)) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
