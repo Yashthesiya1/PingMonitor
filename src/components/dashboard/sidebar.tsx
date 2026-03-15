@@ -85,9 +85,8 @@ export function Sidebar() {
       : []),
   ];
 
-  const userInitial = user?.profile?.name
-    ? user.profile.name.charAt(0).toUpperCase()
-    : user?.email?.charAt(0).toUpperCase() || "U";
+  const userName = profile?.display_name || user?.profile?.name || "User";
+  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <div className="flex h-screen w-[240px] flex-col bg-[hsl(var(--sidebar))] border-r border-[hsl(var(--sidebar-border))]">
@@ -144,7 +143,7 @@ export function Sidebar() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {user?.profile?.name || "User"}
+                  {userName}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {user?.email}
@@ -199,7 +198,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-[13px] font-medium truncate text-[hsl(var(--sidebar-foreground))]">
-              {user?.profile?.name || "User"}
+              {userName}
             </p>
             <p className="text-[11px] truncate text-muted-foreground">
               {user?.email}

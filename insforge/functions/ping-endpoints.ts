@@ -2,9 +2,11 @@ import { createClient } from "npm:@insforge/sdk";
 
 interface EndpointRow {
   id: string;
+  user_id: string;
   url: string;
   method: string;
   monitor_type: string;
+  notify_email: boolean;
 }
 
 // Parse Atlassian Statuspage JSON format
@@ -134,6 +136,60 @@ export default async function (req: Request): Promise<Response> {
           p_error_message: errorMessage,
           p_status_indicator: statusIndicator,
         });
+
+        // --- Incident detection ---
+        if (!isUp) {
+          // Check if there's already an open incident
+          const { data: openIncident } = await client.database
+            .rpc("get_open_incident", { p_endpoint_id: endpoint.id });
+
+          if (openIncident) {
+            // Increment failure count
+            await client.database.rpc("increment_incident_failures", {
+              p_endpoint_id: endpoint.id,
+            });
+          } else {
+            // Create new incident (first failure triggers it immediately for responsiveness)
+            const { data: incidentId } = await client.database
+              .rpc("create_incident", {
+                p_endpoint_id: endpoint.id,
+                p_user_id: endpoint.user_id,
+                p_cause: errorMessage || `HTTP ${statusCode}`,
+              });
+
+            // Log notification
+            if (endpoint.notify_email && incidentId) {
+              await client.database.rpc("log_notification", {
+                p_user_id: endpoint.user_id,
+                p_endpoint_id: endpoint.id,
+                p_incident_id: incidentId,
+                p_channel: "email",
+                p_event_type: "endpoint_down",
+              });
+            }
+          }
+        } else {
+          // Endpoint is up — resolve any open incident
+          const { data: openIncident } = await client.database
+            .rpc("get_open_incident", { p_endpoint_id: endpoint.id });
+
+          if (openIncident) {
+            await client.database.rpc("resolve_incident", {
+              p_endpoint_id: endpoint.id,
+            });
+
+            // Log recovery notification
+            if (endpoint.notify_email) {
+              await client.database.rpc("log_notification", {
+                p_user_id: endpoint.user_id,
+                p_endpoint_id: endpoint.id,
+                p_incident_id: openIncident.id,
+                p_channel: "email",
+                p_event_type: "endpoint_recovered",
+              });
+            }
+          }
+        }
 
         return { endpoint_id: endpoint.id, is_up: isUp };
       })

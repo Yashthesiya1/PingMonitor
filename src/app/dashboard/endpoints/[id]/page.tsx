@@ -53,7 +53,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
-import type { Endpoint, EndpointCheck } from "@/lib/types";
+import type { Endpoint, EndpointCheck, Incident } from "@/lib/types";
 
 export default function EndpointDetailPage({
   params,
@@ -63,22 +63,30 @@ export default function EndpointDetailPage({
   const { id } = use(params);
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [checks, setChecks] = useState<EndpointCheck[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [epRes, checksRes] = await Promise.all([
+      const [epRes, checksRes, incRes] = await Promise.all([
         fetchWithAuth("/api/endpoints"),
         fetchWithAuth(`/api/endpoints/${id}/checks`),
+        fetchWithAuth("/api/incidents"),
       ]);
       const epData = await epRes.json();
       const checksData = await checksRes.json();
+      const incData = await incRes.json();
 
       const ep = epData.data?.find((e: Endpoint) => e.id === id);
       if (ep) setEndpoint(ep);
       if (checksData.data) setChecks(checksData.data);
+      if (incData.data) {
+        setIncidents(
+          incData.data.filter((i: Incident) => i.endpoint_id === id)
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -180,7 +188,7 @@ export default function EndpointDetailPage({
         ...checks.filter((c) => c.response_time_ms).map((c) => c.response_time_ms!)
       )
     : 0;
-  const incidents = checks.filter((c) => !c.is_up).length;
+  const failedChecksCount = checks.filter((c) => !c.is_up).length;
 
   // Chart data — each check is a data point
   const responseChartData = checks.map((c) => {
@@ -382,9 +390,9 @@ export default function EndpointDetailPage({
               </p>
               <XCircle className="h-4 w-4 text-muted-foreground/50" />
             </div>
-            <p className="text-xl font-bold">{incidents}</p>
+            <p className="text-xl font-bold">{incidents.length}</p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Failed checks in 24h
+              {failedChecksCount} failed checks in 24h
             </p>
           </CardContent>
         </Card>
@@ -616,6 +624,91 @@ export default function EndpointDetailPage({
         </CardContent>
       </Card>
 
+      {/* Incidents */}
+      <Card className="rounded-xl mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">
+            Incidents
+          </CardTitle>
+          <CardDescription>
+            {incidents.length} incident{incidents.length !== 1 ? "s" : ""} recorded
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {incidents.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No incidents recorded. Great job!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {incidents.map((incident) => (
+                <div
+                  key={incident.id}
+                  className={`rounded-lg border p-4 ${
+                    incident.is_resolved
+                      ? "bg-card"
+                      : "border-red-200 bg-red-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      {incident.is_resolved ? (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 text-xs"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Resolved
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-red-200 bg-red-50 text-red-700 text-xs"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                          Ongoing
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {incident.consecutive_failures} failed check
+                        {incident.consecutive_failures !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(incident.started_at).toLocaleString()}
+                    </span>
+                  </div>
+                  {incident.cause && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Cause: {incident.cause}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    {incident.is_resolved && incident.duration_seconds && (
+                      <span>
+                        Duration: {formatDuration(incident.duration_seconds)}
+                      </span>
+                    )}
+                    {incident.is_resolved && incident.resolved_at && (
+                      <span>
+                        Resolved:{" "}
+                        {new Date(incident.resolved_at).toLocaleString()}
+                      </span>
+                    )}
+                    {!incident.is_resolved && (
+                      <span className="text-red-600 font-medium">
+                        Ongoing since{" "}
+                        {getTimeAgo(incident.started_at)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Recent checks datatable */}
       <ChecksDataTable checks={checks} />
 
@@ -660,4 +753,14 @@ function getTimeAgo(dateStr: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}m ${seconds % 60}s`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ${mins % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
 }

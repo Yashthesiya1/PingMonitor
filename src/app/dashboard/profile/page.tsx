@@ -23,6 +23,9 @@ import {
   Calendar,
   LogOut,
   Shield,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { UserProfile } from "@/lib/types";
@@ -33,6 +36,15 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [endpointCount, setEndpointCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Edit state
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -53,11 +65,55 @@ export default function ProfilePage() {
     window.location.href = "/";
   };
 
+  const startEditing = () => {
+    setEditName(profile?.display_name || user?.profile?.name || "");
+    setEditing(true);
+    setSaveMessage(null);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setSaveMessage(null);
+  };
+
+  const handleSave = async () => {
+    if (!editName.trim()) return;
+
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const res = await fetchWithAuth("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+
+      if (res.ok) {
+        setSaveMessage({ type: "success", text: "Profile updated! Refresh to see changes across the app." });
+        setEditing(false);
+      } else {
+        const data = await res.json();
+        setSaveMessage({
+          type: "error",
+          text: data.error || "Failed to update profile",
+        });
+      }
+    } catch {
+      setSaveMessage({ type: "error", text: "Something went wrong" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayName = editing ? editName : (profile?.display_name || user?.profile?.name || "User");
+  const userInitial = displayName.charAt(0).toUpperCase();
+
   if (!isLoaded || loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[300px] rounded-xl" />
+      <div className="space-y-6 max-w-3xl">
+        <Skeleton className="h-[140px] rounded-xl" />
+        <Skeleton className="h-[200px] rounded-xl" />
         <Skeleton className="h-[200px] rounded-xl" />
       </div>
     );
@@ -65,27 +121,79 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Save message */}
+      {saveMessage && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            saveMessage.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-destructive/30 bg-destructive/5 text-destructive"
+          }`}
+        >
+          {saveMessage.text}
+        </div>
+      )}
+
       {/* Profile Header */}
       <Card className="rounded-xl border bg-card shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
-              {user?.profile?.name
-                ? user.profile.name.charAt(0).toUpperCase()
-                : user?.email?.charAt(0).toUpperCase() || "U"}
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold shrink-0">
+              {userInitial}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold">
-                  {user?.profile?.name || "User"}
-                </h1>
-                <Badge
-                  variant={profile?.role === "admin" ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {profile?.role || "user"}
-                </Badge>
-              </div>
+            <div className="flex-1 min-w-0">
+              {editing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Your name"
+                    className="h-9 max-w-[250px]"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSave();
+                      if (e.key === "Escape") cancelEditing();
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    onClick={handleSave}
+                    disabled={saving || !editName.trim()}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold">{displayName}</h1>
+                  <Badge
+                    variant={
+                      profile?.role === "admin" ? "default" : "secondary"
+                    }
+                    className="text-xs"
+                  >
+                    {profile?.role || "user"}
+                  </Badge>
+                  <button
+                    onClick={startEditing}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                    title="Edit name"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
               <p className="text-sm text-muted-foreground mt-0.5">
                 {user?.email}
               </p>
@@ -103,7 +211,7 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 shrink-0"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-1.5" />
@@ -129,7 +237,7 @@ export default function ProfilePage() {
                 Name
               </Label>
               <p className="text-sm font-medium">
-                {user?.profile?.name || "Not set"}
+                {profile?.display_name || user?.profile?.name || "Not set"}
               </p>
             </div>
             <div className="space-y-1.5">

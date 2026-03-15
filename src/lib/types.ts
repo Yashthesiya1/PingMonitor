@@ -32,7 +32,32 @@ export interface UserProfile {
   role: "user" | "admin";
   credits: number;
   max_endpoints: number;
+  display_name: string | null;
   created_at: string;
+}
+
+export interface Incident {
+  id: string;
+  endpoint_id: string;
+  user_id: string;
+  started_at: string;
+  resolved_at: string | null;
+  is_resolved: boolean;
+  cause: string | null;
+  duration_seconds: number | null;
+  consecutive_failures: number;
+  created_at: string;
+}
+
+export interface NotificationLog {
+  id: string;
+  user_id: string;
+  endpoint_id: string;
+  incident_id: string | null;
+  channel: string;
+  event_type: string;
+  status: string;
+  sent_at: string;
 }
 
 export interface AdminStats {
