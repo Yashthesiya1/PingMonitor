@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser, useAuth } from "@insforge/nextjs";
+import { PingMonitorLogo } from "@/components/logo";
 import {
   Activity,
   BarChart3,
@@ -92,9 +93,7 @@ export function Sidebar() {
     <div className="flex h-screen w-[240px] flex-col bg-[hsl(var(--sidebar))] border-r border-[hsl(var(--sidebar-border))]">
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 px-5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Activity className="h-4 w-4" />
-        </div>
+        <PingMonitorLogo size={28} />
         <span className="text-[15px] font-semibold text-[hsl(var(--sidebar-foreground))]">
           PingMonitor
         </span>
