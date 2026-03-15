@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       notify_sms = false,
       notify_push = false,
       monitor_region = "auto",
+      monitor_type = "http",
     } = body;
 
     if (!name || !url) {
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
           notify_sms,
           notify_push,
           monitor_region,
+          monitor_type,
         },
       ])
       .select();

@@ -15,6 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Clock,
   Globe,
@@ -55,6 +65,7 @@ export default function EndpointDetailPage({
   const [checks, setChecks] = useState<EndpointCheck[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -101,6 +112,8 @@ export default function EndpointDetailPage({
     await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
     window.location.href = "/dashboard/endpoints";
   };
+
+  const onDeleteClick = () => setShowDeleteDialog(true);
 
   const handleCopyUrl = () => {
     if (endpoint) {
@@ -262,7 +275,7 @@ export default function EndpointDetailPage({
             variant="outline"
             size="sm"
             className="gap-1.5 text-destructive hover:text-destructive"
-            onClick={handleDelete}
+            onClick={onDeleteClick}
           >
             <Trash2 className="h-3.5 w-3.5" />
             Delete
@@ -291,11 +304,28 @@ export default function EndpointDetailPage({
                 ? "Paused"
                 : isUp === null
                 ? "Pending"
+                : endpoint.monitor_type === "status" && latestCheck?.status_indicator
+                ? latestCheck.status_indicator === "none"
+                  ? "Operational"
+                  : latestCheck.status_indicator === "minor"
+                  ? "Degraded"
+                  : latestCheck.status_indicator === "major"
+                  ? "Major Outage"
+                  : latestCheck.status_indicator === "critical"
+                  ? "Critical"
+                  : isUp
+                  ? "Operational"
+                  : "Down"
                 : isUp
                 ? "Up"
                 : "Down"}
             </p>
             <p className="text-[11px] text-muted-foreground mt-1">
+              {endpoint.monitor_type === "status" && (
+                <Badge variant="secondary" className="text-[10px] mr-1.5 px-1.5 py-0 h-4">
+                  STATUS
+                </Badge>
+              )}
               {latestCheck
                 ? `Last check ${getTimeAgo(latestCheck.checked_at)}`
                 : "No checks yet"}
@@ -588,6 +618,35 @@ export default function EndpointDetailPage({
 
       {/* Recent checks datatable */}
       <ChecksDataTable checks={checks} />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete monitor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">
+                {endpoint.name}
+              </span>
+              ? This will permanently remove the monitor and all its check
+              history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

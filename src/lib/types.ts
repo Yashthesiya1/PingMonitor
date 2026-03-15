@@ -10,6 +10,7 @@ export interface Endpoint {
   notify_sms: boolean;
   notify_push: boolean;
   monitor_region: string;
+  monitor_type: "http" | "status";
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +22,7 @@ export interface EndpointCheck {
   response_time_ms: number | null;
   is_up: boolean;
   error_message: string | null;
+  status_indicator: string | null;
   checked_at: string;
 }
 

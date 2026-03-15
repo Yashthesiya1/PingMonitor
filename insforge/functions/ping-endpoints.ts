@@ -1,5 +1,42 @@
 import { createClient } from "npm:@insforge/sdk";
 
+interface EndpointRow {
+  id: string;
+  url: string;
+  method: string;
+  monitor_type: string;
+}
+
+// Parse Atlassian Statuspage JSON format
+function parseStatusPage(json: Record<string, unknown>): {
+  indicator: string;
+  description: string;
+  isUp: boolean;
+} {
+  const status = json?.status as Record<string, string> | undefined;
+  if (status?.indicator) {
+    // Atlassian format: none = operational, minor/major/critical = issues
+    const indicator = status.indicator;
+    const description = status.description || indicator;
+    return {
+      indicator,
+      description,
+      isUp: indicator === "none" || indicator === "operational",
+    };
+  }
+
+  // Google Cloud format: array of active incidents
+  if (Array.isArray(json)) {
+    return {
+      indicator: json.length === 0 ? "none" : "major",
+      description: json.length === 0 ? "All systems operational" : `${json.length} active incident(s)`,
+      isUp: json.length === 0,
+    };
+  }
+
+  return { indicator: "unknown", description: "Unknown format", isUp: false };
+}
+
 export default async function (req: Request): Promise<Response> {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -17,7 +54,6 @@ export default async function (req: Request): Promise<Response> {
   });
 
   try {
-    // Use RPC to bypass RLS and get all active endpoints
     const { data: endpoints, error: fetchError } = await client.database
       .rpc("get_active_endpoints");
 
@@ -35,53 +71,71 @@ export default async function (req: Request): Promise<Response> {
       );
     }
 
-    // Ping each endpoint
     const results = await Promise.allSettled(
-      endpoints.map(async (endpoint: { id: string; url: string; method: string }) => {
+      endpoints.map(async (endpoint: EndpointRow) => {
         const startTime = Date.now();
         let statusCode: number | null = null;
         let isUp = false;
         let errorMessage: string | null = null;
         let responseTimeMs: number | null = null;
+        let statusIndicator: string | null = null;
+
+        const isStatusMonitor = endpoint.monitor_type === "status";
 
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          const timeout = setTimeout(() => controller.abort(), 15000);
 
           const response = await fetch(endpoint.url, {
-            method: endpoint.method || "GET",
+            method: "GET",
             signal: controller.signal,
             headers: {
               "User-Agent": "PingMonitor/1.0",
+              "Accept": "application/json",
             },
           });
 
           clearTimeout(timeout);
-
           responseTimeMs = Date.now() - startTime;
           statusCode = response.status;
-          isUp = response.status >= 200 && response.status < 400;
+
+          if (isStatusMonitor) {
+            // Parse the status page JSON
+            try {
+              const json = await response.json();
+              const parsed = parseStatusPage(json);
+              isUp = parsed.isUp;
+              statusIndicator = parsed.indicator;
+              if (!isUp) {
+                errorMessage = parsed.description;
+              }
+            } catch {
+              // If we can't parse JSON but got a response, check HTTP status
+              isUp = response.status >= 200 && response.status < 400;
+              statusIndicator = isUp ? "none" : "major";
+              errorMessage = isUp ? null : "Failed to parse status page";
+            }
+          } else {
+            // HTTP monitor — standard check
+            isUp = response.status >= 200 && response.status < 400;
+          }
         } catch (err: unknown) {
           responseTimeMs = Date.now() - startTime;
           errorMessage = err instanceof Error ? err.message : "Unknown error";
           isUp = false;
+          if (isStatusMonitor) statusIndicator = "critical";
         }
 
-        // Use RPC to bypass RLS and insert check result
         await client.database.rpc("insert_check", {
           p_endpoint_id: endpoint.id,
           p_status_code: statusCode,
           p_response_time_ms: responseTimeMs,
           p_is_up: isUp,
           p_error_message: errorMessage,
+          p_status_indicator: statusIndicator,
         });
 
-        return {
-          endpoint_id: endpoint.id,
-          is_up: isUp,
-          response_time_ms: responseTimeMs,
-          status_code: statusCode,
-        };
+        return { endpoint_id: endpoint.id, is_up: isUp };
       })
     );
 
@@ -93,10 +147,7 @@ export default async function (req: Request): Promise<Response> {
         checked: successful,
         total: endpoints.length,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
     return new Response(

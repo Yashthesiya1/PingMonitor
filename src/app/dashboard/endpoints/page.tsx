@@ -10,6 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Plus,
   Search,
   Filter,
@@ -34,6 +44,7 @@ export default function EndpointsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Endpoint | null>(null);
 
   const fetchEndpoints = useCallback(async () => {
     try {
@@ -93,9 +104,11 @@ export default function EndpointsPage() {
     return () => clearInterval(timer);
   }, [endpoints, refreshAll]);
 
-  const handleDelete = async (id: string) => {
-    await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
-    setEndpoints((prev) => prev.filter((e) => e.id !== id));
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await fetchWithAuth(`/api/endpoints/${deleteTarget.id}`, { method: "DELETE" });
+    setEndpoints((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+    setDeleteTarget(null);
     setMenuOpen(null);
   };
 
@@ -268,7 +281,9 @@ export default function EndpointsPage() {
                           variant="secondary"
                           className="text-[10px] px-1.5 py-0 h-4 font-normal"
                         >
-                          HTTP
+                          {endpoint.monitor_type === "status"
+                            ? "STATUS"
+                            : "HTTP"}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {!endpoint.is_active
@@ -362,7 +377,10 @@ export default function EndpointsPage() {
                             )}
                           </button>
                           <button
-                            onClick={() => handleDelete(endpoint.id)}
+                            onClick={() => {
+                              setDeleteTarget(endpoint);
+                              setMenuOpen(null);
+                            }}
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-destructive hover:bg-muted transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -467,6 +485,35 @@ export default function EndpointsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete monitor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">
+                {deleteTarget?.name}
+              </span>
+              ? This will permanently remove the monitor and all its check
+              history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
