@@ -10,6 +10,7 @@ import {
   Globe,
   Shield,
   List,
+  Bell,
   MoreVertical,
   User,
   LogOut,
@@ -73,6 +74,7 @@ export function Sidebar() {
         { title: "Endpoints", href: "/dashboard/endpoints", icon: Globe },
         { title: "Checks", href: "/dashboard/checks", icon: List },
         { title: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
+        { title: "Notifications", href: "/dashboard/notifications", icon: Bell },
       ],
     },
     ...(isAdmin
