@@ -173,7 +173,7 @@ export default function ProfilePage() {
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-0.5">
-                {user?.email}
+                {profile?.email || user?.email}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Member since{" "}
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                 <Mail className="h-3 w-3" />
                 Email
               </Label>
-              <p className="text-sm font-medium">{user?.email}</p>
+              <p className="text-sm font-medium">{profile?.email || user?.email}</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground flex items-center gap-1.5">

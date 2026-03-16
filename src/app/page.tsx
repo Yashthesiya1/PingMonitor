@@ -1,11 +1,5 @@
 import Link from "next/link";
 import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-} from "@insforge/nextjs";
-import {
   Activity,
   BarChart3,
   Shield,
@@ -16,7 +10,6 @@ import {
   CheckCircle2,
   ArrowRight,
   ChevronRight,
-  Menu,
 } from "lucide-react";
 import { AutoRedirectIfSignedIn } from "@/components/auto-redirect";
 import { PingMonitorLogo, PingMonitorLogoMark } from "@/components/logo";
@@ -52,26 +45,16 @@ export default function Home() {
             </a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <SignedOut>
-              <SignInButton>
-                <button className="hidden sm:inline-flex text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
-                  Log in
-                </button>
-              </SignInButton>
-              <SignUpButton>
-                <button className="inline-flex items-center justify-center rounded-lg bg-primary px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/25">
-                  Start Free
-                </button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <Link
-                href="/dashboard/endpoints"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/25"
-              >
-                Dashboard
-              </Link>
-            </SignedIn>
+            <Link href="/sign-in">
+              <button className="hidden sm:inline-flex text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+                Log in
+              </button>
+            </Link>
+            <Link href="/sign-up">
+              <button className="inline-flex items-center justify-center rounded-lg bg-primary px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/25">
+                Start Free
+              </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -113,28 +96,17 @@ export default function Home() {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mt-8 sm:mt-10 w-full sm:w-auto">
-              <SignedOut>
-                <SignUpButton>
-                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
-                    Start Monitoring — Free
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </SignUpButton>
-                <SignInButton>
-                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-border px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-semibold text-foreground hover:bg-muted/50 transition-all">
-                    Sign In
-                  </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <Link
-                  href="/dashboard/endpoints"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
-                >
-                  Go to Dashboard
+              <Link href="/sign-up">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
+                  Start Monitoring — Free
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-              </SignedIn>
+                </button>
+              </Link>
+              <Link href="/sign-in">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-border px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-semibold text-foreground hover:bg-muted/50 transition-all">
+                  Sign In
+                </button>
+              </Link>
             </div>
 
             {/* Social proof */}
@@ -384,18 +356,11 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <SignedOut>
-                <SignUpButton>
-                  <button className="mt-6 sm:mt-8 w-full rounded-lg border border-primary text-primary py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors">
-                    Get Started Free
-                  </button>
-                </SignUpButton>
-              </SignedOut>
-              <SignedIn>
-                <Link href="/dashboard/endpoints" className="mt-6 sm:mt-8 w-full inline-flex items-center justify-center rounded-lg border border-primary text-primary py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors">
-                  Go to Dashboard
-                </Link>
-              </SignedIn>
+              <Link href="/sign-up">
+                <button className="mt-6 sm:mt-8 w-full rounded-lg border border-primary text-primary py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors">
+                  Get Started Free
+                </button>
+              </Link>
             </div>
 
             {/* Pro tier */}
@@ -556,20 +521,12 @@ export default function Home() {
             Set up your first monitor in under 30 seconds. Free forever for up to 7 endpoints.
           </p>
           <div className="mt-6 sm:mt-8">
-            <SignedOut>
-              <SignUpButton>
-                <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-10 py-3 sm:py-4 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
-                  Start Monitoring — Free
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <Link href="/dashboard/endpoints" className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-10 py-3 sm:py-4 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25">
-                Go to Dashboard
+            <Link href="/sign-up">
+              <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 sm:px-10 py-3 sm:py-4 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
+                Start Monitoring — Free
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-            </SignedIn>
+              </button>
+            </Link>
           </div>
         </div>
       </section>

@@ -5,10 +5,50 @@ interface NotificationPayload {
   endpoint_name: string;
   endpoint_url: string;
   user_email: string;
+  user_id: string;
   incident_id: string;
   cause?: string;
   duration?: string;
   checked_at: string;
+}
+
+interface ChannelRow {
+  id: string;
+  channel_type: string;
+  name: string;
+  config: Record<string, string>;
+}
+
+function buildSlackMessage(payload: NotificationPayload): string {
+  if (payload.type === "endpoint_down") {
+    return `:red_circle: *[DOWN] ${payload.endpoint_name}*\nURL: ${payload.endpoint_url}\nCause: ${payload.cause || "Unreachable"}\nDetected: ${payload.checked_at}`;
+  }
+  return `:large_green_circle: *[RECOVERED] ${payload.endpoint_name}*\nURL: ${payload.endpoint_url}\nDowntime: ${payload.duration || "< 1 min"}\nRecovered: ${payload.checked_at}`;
+}
+
+function buildDiscordMessage(payload: NotificationPayload): string {
+  if (payload.type === "endpoint_down") {
+    return `🔴 **[DOWN] ${payload.endpoint_name}**\nURL: ${payload.endpoint_url}\nCause: ${payload.cause || "Unreachable"}\nDetected: ${payload.checked_at}`;
+  }
+  return `🟢 **[RECOVERED] ${payload.endpoint_name}**\nURL: ${payload.endpoint_url}\nDowntime: ${payload.duration || "< 1 min"}\nRecovered: ${payload.checked_at}`;
+}
+
+function buildTelegramMessage(payload: NotificationPayload): string {
+  if (payload.type === "endpoint_down") {
+    return `🔴 *\\[DOWN\\] ${payload.endpoint_name}*\nURL: ${payload.endpoint_url}\nCause: ${payload.cause || "Unreachable"}\nDetected: ${payload.checked_at}`;
+  }
+  return `🟢 *\\[RECOVERED\\] ${payload.endpoint_name}*\nURL: ${payload.endpoint_url}\nDowntime: ${payload.duration || "< 1 min"}\nRecovered: ${payload.checked_at}`;
+}
+
+function buildWebhookPayload(payload: NotificationPayload): Record<string, unknown> {
+  return {
+    event: payload.type,
+    endpoint: { name: payload.endpoint_name, url: payload.endpoint_url },
+    incident_id: payload.incident_id,
+    cause: payload.cause || null,
+    duration: payload.duration || null,
+    checked_at: payload.checked_at,
+  };
 }
 
 function getDownEmailHtml(payload: NotificationPayload): string {
@@ -156,36 +196,123 @@ export default async function (req: Request): Promise<Response> {
       anonKey: Deno.env.get("ANON_KEY"),
     });
 
-    const subject =
-      payload.type === "endpoint_down"
-        ? `[DOWN] ${payload.endpoint_name} is not responding`
-        : `[RECOVERED] ${payload.endpoint_name} is back up`;
+    // Get all active channels for this user
+    const { data: channels } = await client.database
+      .rpc("get_user_channels", { p_user_id: payload.user_id });
 
-    const html =
-      payload.type === "endpoint_down"
-        ? getDownEmailHtml(payload)
-        : getRecoveryEmailHtml(payload);
+    const results: { channel: string; success: boolean; error?: string }[] = [];
 
-    const { error } = await client.emails.send({
-      to: payload.user_email,
-      subject,
-      html,
-    });
+    // If no channels configured, fall back to email
+    const channelList: ChannelRow[] = (channels && channels.length > 0)
+      ? channels
+      : [{ id: "fallback", channel_type: "email", name: "Email", config: {} }];
 
-    if (error) {
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    for (const channel of channelList) {
+      try {
+        switch (channel.channel_type) {
+          case "email": {
+            const subject = payload.type === "endpoint_down"
+              ? `[DOWN] ${payload.endpoint_name} is not responding`
+              : `[RECOVERED] ${payload.endpoint_name} is back up`;
+            const html = payload.type === "endpoint_down"
+              ? getDownEmailHtml(payload)
+              : getRecoveryEmailHtml(payload);
+
+            await client.emails.send({ to: payload.user_email, subject, html });
+            results.push({ channel: "email", success: true });
+            break;
+          }
+
+          case "slack": {
+            const url = channel.config?.webhook_url;
+            if (url) {
+              await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: buildSlackMessage(payload) }),
+              });
+              results.push({ channel: "slack", success: true });
+            }
+            break;
+          }
+
+          case "discord": {
+            const url = channel.config?.webhook_url;
+            if (url) {
+              await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: buildDiscordMessage(payload) }),
+              });
+              results.push({ channel: "discord", success: true });
+            }
+            break;
+          }
+
+          case "teams": {
+            const url = channel.config?.webhook_url;
+            if (url) {
+              await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: buildSlackMessage(payload) }),
+              });
+              results.push({ channel: "teams", success: true });
+            }
+            break;
+          }
+
+          case "telegram": {
+            const botToken = channel.config?.bot_token;
+            const chatId = channel.config?.chat_id;
+            if (botToken && chatId) {
+              await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: buildTelegramMessage(payload),
+                  parse_mode: "MarkdownV2",
+                }),
+              });
+              results.push({ channel: "telegram", success: true });
+            }
+            break;
+          }
+
+          case "webhook": {
+            const url = channel.config?.webhook_url;
+            if (url) {
+              const headers: Record<string, string> = { "Content-Type": "application/json" };
+              if (channel.config?.headers) {
+                try { Object.assign(headers, JSON.parse(channel.config.headers)); } catch {}
+              }
+              await fetch(url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(buildWebhookPayload(payload)),
+              });
+              results.push({ channel: "webhook", success: true });
+            }
+            break;
+          }
+        }
+      } catch (err: unknown) {
+        results.push({
+          channel: channel.channel_type,
+          success: false,
+          error: err instanceof Error ? err.message : "Failed",
+        });
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, channels: results }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Failed to send email" }),
+      JSON.stringify({ error: err instanceof Error ? err.message : "Failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

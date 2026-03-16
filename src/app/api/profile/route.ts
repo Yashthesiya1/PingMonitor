@@ -15,6 +15,11 @@ export async function GET() {
       edgeFunctionToken: token ?? undefined,
     });
 
+    // Get user email from auth.users
+    const { data: email } = await client.database.rpc("get_user_email", {
+      p_user_id: userId,
+    });
+
     // Try to get existing profile
     const { data: profile } = await client.database
       .from("user_profiles")
@@ -23,7 +28,7 @@ export async function GET() {
       .maybeSingle();
 
     if (profile) {
-      return NextResponse.json({ data: profile });
+      return NextResponse.json({ data: { ...profile, email: email || null } });
     }
 
     // Auto-create profile on first visit
@@ -44,7 +49,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: newProfile });
+    return NextResponse.json({ data: { ...newProfile, email: email || null } });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

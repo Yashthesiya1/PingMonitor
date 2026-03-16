@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@insforge/nextjs";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -44,6 +45,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  Settings,
 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { Endpoint, NotificationLog } from "@/lib/types";
@@ -197,13 +199,21 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Notifications<span className="text-primary">.</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          History of all alerts sent for your monitors
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Notifications<span className="text-primary">.</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            History of all alerts sent for your monitors
+          </p>
+        </div>
+        <Link href="/dashboard/notifications/settings">
+          <Button variant="outline" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Channels
+          </Button>
+        </Link>
       </div>
 
       {/* Summary */}

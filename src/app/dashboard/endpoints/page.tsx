@@ -169,7 +169,7 @@ export default function EndpointsPage() {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       {/* Main content */}
       <div className="flex-1 min-w-0">
         {/* Header */}
@@ -408,7 +408,7 @@ export default function EndpointsPage() {
       </div>
 
       {/* Right sidebar stats */}
-      <div className="w-[240px] shrink-0 space-y-4">
+      <div className="w-full lg:w-[240px] shrink-0 space-y-4 grid grid-cols-2 lg:grid-cols-1 gap-4 lg:gap-0 lg:space-y-4">
         {/* Current status */}
         <Card className="rounded-xl">
           <CardContent className="p-5">
