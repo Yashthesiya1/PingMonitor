@@ -33,6 +33,7 @@ export interface UserProfile {
   credits: number;
   max_endpoints: number;
   display_name: string | null;
+  email: string | null;
   created_at: string;
 }
 
@@ -58,6 +59,17 @@ export interface NotificationLog {
   event_type: string;
   status: string;
   sent_at: string;
+}
+
+export interface NotificationChannel {
+  id: string;
+  user_id: string;
+  channel_type: "email" | "slack" | "discord" | "webhook" | "telegram" | "teams";
+  name: string;
+  config: Record<string, string>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AdminStats {

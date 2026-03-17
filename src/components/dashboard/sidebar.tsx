@@ -10,6 +10,7 @@ import {
   Globe,
   Shield,
   List,
+  Bell,
   MoreVertical,
   User,
   LogOut,
@@ -32,7 +33,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user } = useUser();
   const { signOut } = useAuth();
@@ -73,6 +74,7 @@ export function Sidebar() {
         { title: "Endpoints", href: "/dashboard/endpoints", icon: Globe },
         { title: "Checks", href: "/dashboard/checks", icon: List },
         { title: "Metrics", href: "/dashboard/metrics", icon: BarChart3 },
+        { title: "Notifications", href: "/dashboard/notifications", icon: Bell },
       ],
     },
     ...(isAdmin
@@ -116,6 +118,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium transition-colors",
                       isActive
@@ -148,7 +151,7 @@ export function Sidebar() {
                   {userName}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.email}
+                  {profile?.email || user?.email}
                 </p>
               </div>
             </div>
@@ -203,7 +206,7 @@ export function Sidebar() {
               {userName}
             </p>
             <p className="text-[11px] truncate text-muted-foreground">
-              {user?.email}
+              {profile?.email || user?.email}
             </p>
           </div>
           <MoreVertical className="h-4 w-4 shrink-0 text-muted-foreground" />

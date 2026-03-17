@@ -6,9 +6,15 @@ export default InsforgeMiddleware({
     "https://s927cvm2.ap-southeast.insforge.app",
   publicRoutes: [
     "/",
+    "/sign-in",
+    "/sign-up",
     "/api/auth",
     "/api/auth/(.*)",
   ],
+  signInUrl: "/sign-in",
+  signUpUrl: "/sign-up",
+  afterSignInUrl: "/dashboard/endpoints",
+  useBuiltInAuth: false,
 });
 
 export const config = {
