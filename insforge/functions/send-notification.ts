@@ -202,10 +202,15 @@ export default async function (req: Request): Promise<Response> {
 
     const results: { channel: string; success: boolean; error?: string }[] = [];
 
-    // If no channels configured, fall back to email
-    const channelList: ChannelRow[] = (channels && channels.length > 0)
-      ? channels
-      : [{ id: "fallback", channel_type: "email", name: "Email", config: {} }];
+    // Only send if user has configured channels — no auto-fallback
+    if (!channels || channels.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, channels: [], message: "No channels configured" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const channelList: ChannelRow[] = channels;
 
     for (const channel of channelList) {
       try {
