@@ -1,276 +1,151 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth-context";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Users,
-  Activity,
-  Zap,
-  TrendingUp,
-  Clock,
-  CreditCard,
-} from "lucide-react";
+import { Users, Globe, CheckCircle2, AlertTriangle, Bell, Zap } from "lucide-react";
 import api from "@/lib/api";
-import type { AdminStats } from "@/lib/types";
 
-interface UserRow {
-  id: string;
-  user_id: string;
-  role: string;
-  credits: number;
-  max_endpoints: number;
-  created_at: string;
-  endpoint_count: number;
+interface AdminStats {
+  total_users: number;
+  total_endpoints: number;
+  active_endpoints: number;
+  total_checks_today: number;
+  avg_response_time: number;
+  uptime_percentage: number;
+  total_incidents: number;
+  open_incidents: number;
+  total_notifications_sent: number;
 }
 
-export default function AdminPage() {
-  const { isLoaded } = useAuth();
+interface ActivityItem {
+  type: string;
+  description: string;
+  timestamp: string;
+}
+
+export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [users, setUsers] = useState<UserRow[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoaded) return;
-
     Promise.all([
       api.get("/api/v1/admin/stats"),
-      api.get("/api/v1/admin/users"),
+      api.get("/api/v1/admin/activity"),
     ])
-      .then(([statsRes, usersRes]) => {
+      .then(([statsRes, activityRes]) => {
         setStats(statsRes.data);
-        setUsers(usersRes.data || []);
+        setActivity(activityRes.data);
       })
-      .catch((err: any) => setError(err.response?.data?.detail || "Failed to load admin data"))
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isLoaded]);
+  }, []);
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-[140px] rounded-xl" />
-          ))}
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
         </div>
         <Skeleton className="h-[300px] rounded-xl" />
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Card className="max-w-md rounded-xl">
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive font-medium">Access Denied</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {error === "Forbidden"
-                ? "You don't have admin access."
-                : error}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const statCards = [
+    { label: "Total Users", value: stats?.total_users || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-500/10" },
+    { label: "Endpoints", value: stats?.total_endpoints || 0, icon: Globe, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Active", value: stats?.active_endpoints || 0, icon: Zap, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+    { label: "Checks Today", value: stats?.total_checks_today || 0, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+    { label: "Open Incidents", value: stats?.open_incidents || 0, icon: AlertTriangle, color: stats?.open_incidents ? "text-red-600" : "text-muted-foreground", bg: stats?.open_incidents ? "bg-red-500/10" : "bg-muted" },
+    { label: "Notifications", value: stats?.total_notifications_sent || 0, icon: Bell, color: "text-orange-600", bg: "bg-orange-500/10" },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
-      <div className="grid gap-4 grid-cols-4">
-        <Card className="rounded-xl border bg-card shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-muted-foreground">
-                Total Users
-              </p>
-              <Users className="h-4 w-4 text-muted-foreground/50" />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard<span className="text-primary">.</span></h1>
+        <p className="text-sm text-muted-foreground mt-1">Platform overview and management</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {statCards.map((card, i) => (
+          <Card key={i} className="rounded-xl">
+            <CardContent className="p-4 text-center">
+              <div className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${card.bg}`}>
+                <card.icon className={`h-5 w-5 ${card.color}`} />
+              </div>
+              <p className="text-2xl font-bold">{card.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{card.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Platform Uptime</CardTitle>
+            <CardDescription>Today&apos;s overall success rate</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <div className={`text-4xl font-bold ${(stats?.uptime_percentage || 0) >= 99 ? "text-emerald-600" : (stats?.uptime_percentage || 0) >= 90 ? "text-yellow-600" : "text-red-600"}`}>
+                {stats?.uptime_percentage || 0}%
+              </div>
+              <div className="flex-1">
+                <div className="h-3 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${stats?.uptime_percentage || 0}%` }} />
+                </div>
+              </div>
             </div>
-            <p className="mt-2 text-3xl font-bold">{stats?.total_users || 0}</p>
-            <div className="mt-3 text-xs text-muted-foreground">
-              Registered on the platform
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Avg Response</p>
+                <p className="text-lg font-semibold">{stats?.avg_response_time || 0}ms</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Incidents</p>
+                <p className="text-lg font-semibold">{stats?.total_incidents || 0}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border bg-card shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-muted-foreground">
-                Endpoints
-              </p>
-              <Activity className="h-4 w-4 text-muted-foreground/50" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">
-              {stats?.total_endpoints || 0}
-            </p>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Zap className="h-3 w-3 text-emerald-500" />
-              <span>{stats?.active_endpoints || 0} active</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border bg-card shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-muted-foreground">
-                Checks Today
-              </p>
-              <TrendingUp className="h-4 w-4 text-muted-foreground/50" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">
-              {stats?.total_checks_today || 0}
-            </p>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>
-                Avg {Math.round(stats?.avg_response_time || 0)}ms response
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border bg-card shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-muted-foreground">
-                Total Credits
-              </p>
-              <CreditCard className="h-4 w-4 text-muted-foreground/50" />
-            </div>
-            <p className="mt-2 text-3xl font-bold">
-              {stats?.total_credits || 0}
-            </p>
-            <div className="mt-3 text-xs text-muted-foreground">
-              Across all users
-            </div>
+        <Card className="rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+            <CardDescription>Latest platform events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {activity.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No recent activity</p>
+            ) : (
+              <div className="space-y-3">
+                {activity.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full shrink-0 ${
+                      item.type === "signup" ? "bg-blue-500/10" : item.type === "endpoint" ? "bg-emerald-500/10" : "bg-red-500/10"
+                    }`}>
+                      {item.type === "signup" ? <Users className="h-3.5 w-3.5 text-blue-600" /> :
+                       item.type === "endpoint" ? <Globe className="h-3.5 w-3.5 text-emerald-600" /> :
+                       <AlertTriangle className="h-3.5 w-3.5 text-red-600" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs truncate">{item.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(item.timestamp).toLocaleString()}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-[9px] shrink-0">{item.type}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Platform Uptime */}
-      <Card className="rounded-xl border bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">
-            Platform Uptime (Today)
-          </CardTitle>
-          <CardDescription>
-            Overall success rate across all monitored endpoints
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-6">
-            <div className="text-4xl font-bold text-emerald-600">
-              {stats?.uptime_percentage || 0}%
-            </div>
-            <div className="flex-1">
-              <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                  style={{
-                    width: `${stats?.uptime_percentage || 0}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card className="rounded-xl border bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Users</CardTitle>
-          <CardDescription>
-            All registered users and their usage
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
-                  User ID
-                </TableHead>
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70">
-                  Role
-                </TableHead>
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                  Credits
-                </TableHead>
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                  Endpoints
-                </TableHead>
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                  Max
-                </TableHead>
-                <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/70 text-right">
-                  Joined
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    No users yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-mono text-xs">
-                      {u.user_id.slice(0, 12)}...
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={u.role === "admin" ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {u.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {u.credits}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {u.endpoint_count}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {u.max_endpoints}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground text-xs">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }
