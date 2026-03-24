@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser, useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import { PingMonitorLogo } from "@/components/logo";
 import {
   Activity,
@@ -19,8 +19,6 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
-import type { UserProfile } from "@/lib/types";
 
 interface NavItem {
   title: string;
@@ -35,20 +33,9 @@ interface NavGroup {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { user } = useUser();
-  const { signOut } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchWithAuth("/api/profile")
-      .then((res) => res.json())
-      .then(({ data }) => {
-        if (data) setProfile(data as UserProfile);
-      })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -66,7 +53,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     window.location.href = "/";
   };
 
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   const navGroups: NavGroup[] = [
     {
@@ -89,7 +76,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       : []),
   ];
 
-  const userName = profile?.display_name || user?.profile?.name || "User";
+  const userName = user?.name || "User";
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
@@ -151,7 +138,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   {userName}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {profile?.email || user?.email}
+                  {user?.email}
                 </p>
               </div>
             </div>
@@ -206,7 +193,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               {userName}
             </p>
             <p className="text-[11px] truncate text-muted-foreground">
-              {profile?.email || user?.email}
+              {user?.email}
             </p>
           </div>
           <MoreVertical className="h-4 w-4 shrink-0 text-muted-foreground" />

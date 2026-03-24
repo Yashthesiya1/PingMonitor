@@ -1,32 +1,69 @@
 import axios from "axios";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://pingmonitor-backend.onrender.com";
+
 const api = axios.create({
-  baseURL: "",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor — add auth token if available
+// Request interceptor — add JWT Bearer token
 api.interceptors.request.use(
   (config) => {
-    // Token is handled by cookies/middleware — no manual header needed for InsForge
-    // When we switch to FastAPI, we'll add Bearer token here
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — handle 401 globally
+// Response interceptor — handle 401, auto-refresh token
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired — redirect to sign-in
-      if (typeof window !== "undefined") {
-        window.location.href = "/sign-in";
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If 401 and we haven't retried yet, try refreshing the token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        try {
+          const res = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
+
+          const { access_token, refresh_token } = res.data;
+          localStorage.setItem("access_token", access_token);
+          localStorage.setItem("refresh_token", refresh_token);
+
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return api(originalRequest);
+        } catch {
+          // Refresh failed — clear tokens and redirect
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("user");
+          window.location.href = "/sign-in";
+          return Promise.reject(error);
+        }
       }
+
+      // No refresh token — redirect to sign-in
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      window.location.href = "/sign-in";
     }
+
     return Promise.reject(error);
   }
 );

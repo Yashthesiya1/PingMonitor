@@ -1,16 +1,15 @@
 "use client";
 
-import { InsforgeBrowserProvider } from "@insforge/nextjs";
-import { insforge } from "@/lib/insforge";
+import { AuthProvider } from "@/lib/auth-context";
 import { PreferencesProvider } from "@/lib/preferences";
 import { AuthGuard } from "@/components/auth-guard";
 
-export function InsforgeProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
-    <InsforgeBrowserProvider client={insforge} afterSignInUrl="/dashboard/endpoints">
+    <AuthProvider>
       <PreferencesProvider>
         <AuthGuard>{children}</AuthGuard>
       </PreferencesProvider>
-    </InsforgeBrowserProvider>
+    </AuthProvider>
   );
 }

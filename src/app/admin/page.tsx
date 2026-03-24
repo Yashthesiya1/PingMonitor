@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import {
   Card,
   CardContent,
@@ -27,6 +27,7 @@ import {
   Clock,
   CreditCard,
 } from "lucide-react";
+import api from "@/lib/api";
 import type { AdminStats } from "@/lib/types";
 
 interface UserRow {
@@ -40,7 +41,7 @@ interface UserRow {
 }
 
 export default function AdminPage() {
-  const { isLoaded } = useUser();
+  const { isLoaded } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,18 +51,14 @@ export default function AdminPage() {
     if (!isLoaded) return;
 
     Promise.all([
-      fetch("/api/admin/stats").then((r) => r.json()),
-      fetch("/api/admin/users").then((r) => r.json()),
+      api.get("/api/v1/admin/stats"),
+      api.get("/api/v1/admin/users"),
     ])
       .then(([statsRes, usersRes]) => {
-        if (statsRes.error) {
-          setError(statsRes.error);
-          return;
-        }
         setStats(statsRes.data);
         setUsers(usersRes.data || []);
       })
-      .catch(() => setError("Failed to load admin data"))
+      .catch((err: any) => setError(err.response?.data?.detail || "Failed to load admin data"))
       .finally(() => setLoading(false));
   }, [isLoaded]);
 

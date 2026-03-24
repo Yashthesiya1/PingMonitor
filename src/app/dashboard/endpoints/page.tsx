@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +32,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 export default function EndpointsPage() {
@@ -50,8 +50,7 @@ export default function EndpointsPage() {
 
   const fetchEndpoints = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/api/endpoints");
-      const { data } = await res.json();
+      const { data } = await api.get("/api/v1/endpoints");
       if (data) setEndpoints(data);
     } finally {
       setLoading(false);
@@ -62,8 +61,7 @@ export default function EndpointsPage() {
     const results: Record<string, EndpointCheck[]> = {};
     await Promise.all(
       endpointIds.map(async (id) => {
-        const res = await fetchWithAuth(`/api/endpoints/${id}/checks`);
-        const { data } = await res.json();
+        const { data } = await api.get(`/api/v1/endpoints/${id}/checks`);
         results[id] = data || [];
       })
     );
@@ -71,8 +69,7 @@ export default function EndpointsPage() {
   }, []);
 
   const refreshAll = useCallback(async () => {
-    const res = await fetchWithAuth("/api/endpoints");
-    const { data } = await res.json();
+    const { data } = await api.get("/api/v1/endpoints");
     if (data) {
       setEndpoints(data);
       const ids = data.map((e: Endpoint) => e.id);
@@ -80,9 +77,8 @@ export default function EndpointsPage() {
         const results: Record<string, EndpointCheck[]> = {};
         await Promise.all(
           ids.map(async (id: string) => {
-            const r = await fetchWithAuth(`/api/endpoints/${id}/checks`);
-            const json = await r.json();
-            results[id] = json.data || [];
+            const { data: checksData } = await api.get(`/api/v1/endpoints/${id}/checks`);
+            results[id] = checksData || [];
           })
         );
         setChecksMap(results);
@@ -110,7 +106,7 @@ export default function EndpointsPage() {
     if (!deleteTarget) return;
     setActionLoading(`delete-${deleteTarget.id}`);
     try {
-      await fetchWithAuth(`/api/endpoints/${deleteTarget.id}`, { method: "DELETE" });
+      await api.delete(`/api/v1/endpoints/${deleteTarget.id}`);
       setEndpoints((prev) => prev.filter((e) => e.id !== deleteTarget.id));
       toast.success("Monitor deleted");
     } finally {
@@ -122,11 +118,7 @@ export default function EndpointsPage() {
 
   const handleToggle = async (id: string, isActive: boolean) => {
     setActionLoading(`toggle-${id}`);
-    await fetchWithAuth(`/api/endpoints/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: isActive }),
-    });
+    await api.patch(`/api/v1/endpoints/${id}`, { is_active: isActive });
     setEndpoints((prev) =>
       prev.map((e) => (e.id === id ? { ...e, is_active: isActive } : e))
     );

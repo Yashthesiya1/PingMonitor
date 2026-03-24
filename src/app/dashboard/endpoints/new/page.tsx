@@ -28,7 +28,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import {
@@ -128,30 +128,21 @@ export default function NewEndpointPage() {
     setError(null);
 
     try {
-      const res = await fetchWithAuth("/api/endpoints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: finalName,
-          url: finalUrl,
-          check_interval: interval,
-          notify_email: notifyEmail,
-          notify_sms: notifySms,
-          notify_push: notifyPush,
-          monitor_region: region,
-          monitor_type: monitorType,
-        }),
+      await api.post("/api/v1/endpoints", {
+        name: finalName,
+        url: finalUrl,
+        check_interval: interval,
+        notify_email: notifyEmail,
+        notify_sms: notifySms,
+        notify_push: notifyPush,
+        monitor_region: region,
+        monitor_type: monitorType,
       });
-
-      if (res.ok) {
-        toast.success("Monitor created");
-        router.push("/dashboard/endpoints");
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to create monitor");
-      }
-    } catch {
-      setError("Something went wrong");
+      toast.success("Monitor created");
+      router.push("/dashboard/endpoints");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to create monitor");
+      setError(err.response?.data?.detail || "Something went wrong");
     } finally {
       setSubmitting(false);
     }

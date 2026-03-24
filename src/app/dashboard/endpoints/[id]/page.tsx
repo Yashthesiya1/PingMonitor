@@ -53,7 +53,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import type { Endpoint, EndpointCheck, Incident } from "@/lib/types";
 
 export default function EndpointDetailPage({
@@ -73,20 +73,17 @@ export default function EndpointDetailPage({
   const fetchData = useCallback(async () => {
     try {
       const [epRes, checksRes, incRes] = await Promise.all([
-        fetchWithAuth("/api/endpoints"),
-        fetchWithAuth(`/api/endpoints/${id}/checks`),
-        fetchWithAuth("/api/incidents"),
+        api.get("/api/v1/endpoints"),
+        api.get(`/api/v1/endpoints/${id}/checks`),
+        api.get("/api/v1/notifications/incidents"),
       ]);
-      const epData = await epRes.json();
-      const checksData = await checksRes.json();
-      const incData = await incRes.json();
 
-      const ep = epData.data?.find((e: Endpoint) => e.id === id);
+      const ep = epRes.data?.find((e: Endpoint) => e.id === id);
       if (ep) setEndpoint(ep);
-      if (checksData.data) setChecks(checksData.data);
-      if (incData.data) {
+      if (checksRes.data) setChecks(checksRes.data);
+      if (incRes.data) {
         setIncidents(
-          incData.data.filter((i: Incident) => i.endpoint_id === id)
+          incRes.data.filter((i: Incident) => i.endpoint_id === id)
         );
       }
     } finally {
@@ -110,11 +107,7 @@ export default function EndpointDetailPage({
     if (!endpoint) return;
     setToggling(true);
     try {
-      await fetchWithAuth(`/api/endpoints/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !endpoint.is_active }),
-      });
+      await api.patch(`/api/v1/endpoints/${id}`, { is_active: !endpoint.is_active });
       toast.success(endpoint.is_active ? "Monitor paused" : "Monitor resumed");
       setEndpoint((prev) =>
         prev ? { ...prev, is_active: !prev.is_active } : null
@@ -126,7 +119,7 @@ export default function EndpointDetailPage({
 
   const handleDelete = async () => {
     setDeleting(true);
-    await fetchWithAuth(`/api/endpoints/${id}`, { method: "DELETE" });
+    await api.delete(`/api/v1/endpoints/${id}`);
     toast.success("Monitor deleted");
     window.location.href = "/dashboard/endpoints";
   };

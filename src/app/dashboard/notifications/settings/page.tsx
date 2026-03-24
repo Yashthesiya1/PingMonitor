@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import {
   Card,
   CardContent,
@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Loader2, Zap, Unplug } from "lucide-react";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CHANNEL_TYPES, type ChannelTypeConfig } from "@/lib/channel-config";
 import type { NotificationChannel } from "@/lib/types";
@@ -56,8 +56,7 @@ export default function NotificationSettingsPage() {
 
   const fetchChannels = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/api/channels");
-      const { data } = await res.json();
+      const { data } = await api.get("/api/v1/notifications/channels");
       if (data) setChannels(data);
     } finally {
       setLoading(false);
@@ -84,25 +83,17 @@ export default function NotificationSettingsPage() {
 
     setSaving(true);
     try {
-      const res = await fetchWithAuth("/api/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel_type: connectType.type,
-          name: channelName.trim(),
-          config: configValues,
-        }),
+      await api.post("/api/v1/notifications/channels", {
+        channel_type: connectType.type,
+        name: channelName.trim(),
+        config: configValues,
       });
-
-      if (res.ok) {
-        toast.success(`${connectType.label} connected`);
-        setConnectType(null);
-        resetForm();
-        fetchChannels();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to connect");
-      }
+      toast.success(`${connectType.label} connected`);
+      setConnectType(null);
+      resetForm();
+      fetchChannels();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to connect");
     } finally {
       setSaving(false);
     }
@@ -110,7 +101,7 @@ export default function NotificationSettingsPage() {
 
   const handleDisconnect = async () => {
     if (!disconnectTarget) return;
-    await fetchWithAuth(`/api/channels/${disconnectTarget.id}`, { method: "DELETE" });
+    await api.delete(`/api/v1/notifications/channels/${disconnectTarget.id}`);
     setChannels((prev) => prev.filter((c) => c.id !== disconnectTarget.id));
     setDisconnectTarget(null);
     toast.success("Channel disconnected");
@@ -119,22 +110,10 @@ export default function NotificationSettingsPage() {
   const handleTest = async (channel: NotificationChannel) => {
     setTesting(channel.id);
     try {
-      const res = await fetchWithAuth("/api/channels/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel_type: channel.channel_type,
-          config: channel.config,
-        }),
-      });
-      if (res.ok) {
-        toast.success("Test notification sent!");
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Test failed");
-      }
-    } catch {
-      toast.error("Test failed");
+      await api.post(`/api/v1/notifications/channels/${channel.id}/test`, {});
+      toast.success("Test notification sent!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Test failed");
     } finally {
       setTesting(null);
     }

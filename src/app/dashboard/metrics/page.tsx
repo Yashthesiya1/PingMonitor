@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import {
   Card,
   CardContent,
@@ -39,7 +39,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 interface EndpointWithChecks {
@@ -54,15 +54,13 @@ export default function MetricsPage() {
 
   const refreshAll = useCallback(async () => {
     try {
-      const epRes = await fetchWithAuth("/api/endpoints");
-      const { data: eps } = await epRes.json();
+      const { data: eps } = await api.get("/api/v1/endpoints");
       if (!eps) return;
 
       const results: EndpointWithChecks[] = [];
       await Promise.all(
         eps.map(async (ep: Endpoint) => {
-          const r = await fetchWithAuth(`/api/endpoints/${ep.id}/checks`);
-          const { data: checks } = await r.json();
+          const { data: checks } = await api.get(`/api/v1/endpoints/${ep.id}/checks`);
           results.push({ endpoint: ep, checks: checks || [] });
         })
       );
