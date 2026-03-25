@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import { useEffect } from "react";
 
 export function AutoRedirectIfSignedIn() {

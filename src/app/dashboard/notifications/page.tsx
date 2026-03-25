@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
 import {
   Card,
@@ -47,7 +47,7 @@ import {
   XCircle,
   Settings,
 } from "lucide-react";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import type { Endpoint, NotificationLog } from "@/lib/types";
 
 type SortField = "sent_at" | "event_type" | "channel";
@@ -74,19 +74,17 @@ export default function NotificationsPage() {
   const fetchData = useCallback(async () => {
     try {
       const [notiRes, epRes] = await Promise.all([
-        fetchWithAuth("/api/notifications"),
-        fetchWithAuth("/api/endpoints"),
+        api.get("/api/v1/notifications/history"),
+        api.get("/api/v1/endpoints"),
       ]);
-      const notiData = await notiRes.json();
-      const epData = await epRes.json();
 
       const epMap: Record<string, string> = {};
-      (epData.data || []).forEach((ep: Endpoint) => {
+      (epRes.data || []).forEach((ep: Endpoint) => {
         epMap[ep.id] = ep.name;
       });
 
       const enriched: NotificationWithEndpoint[] = (
-        notiData.data || []
+        notiRes.data || []
       ).map((n: NotificationLog) => ({
         ...n,
         endpoint_name: epMap[n.endpoint_id] || "Deleted monitor",

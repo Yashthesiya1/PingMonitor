@@ -1,21 +1,10 @@
-import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
+import { NextRequest, NextResponse } from "next/server";
 
-export default InsforgeMiddleware({
-  baseUrl:
-    process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
-    "https://s927cvm2.ap-southeast.insforge.app",
-  publicRoutes: [
-    "/",
-    "/sign-in",
-    "/sign-up",
-    "/api/auth",
-    "/api/auth/(.*)",
-  ],
-  signInUrl: "/sign-in",
-  signUpUrl: "/sign-up",
-  afterSignInUrl: "/dashboard/endpoints",
-  useBuiltInAuth: false,
-});
+export function middleware(request: NextRequest) {
+  // No server-side auth check needed — auth is handled by
+  // client-side AuthGuard + axios interceptor with JWT tokens
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

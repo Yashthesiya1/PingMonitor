@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser, useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import {
   Card,
   CardContent,
@@ -28,13 +28,10 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
-import type { UserProfile } from "@/lib/types";
+import api from "@/lib/api";
 
 export default function ProfilePage() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user, isLoaded, signOut } = useAuth();
   const [endpointCount, setEndpointCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -46,13 +43,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    Promise.all([
-      fetchWithAuth("/api/profile").then((r) => r.json()),
-      fetchWithAuth("/api/endpoints").then((r) => r.json()),
-    ])
-      .then(([profileRes, endpointsRes]) => {
-        if (profileRes.data) setProfile(profileRes.data);
-        if (endpointsRes.data) setEndpointCount(endpointsRes.data.length);
+    api.get("/api/v1/endpoints")
+      .then(({ data }) => {
+        if (data) setEndpointCount(data.length);
       })
       .finally(() => setLoading(false));
   }, [isLoaded]);
@@ -63,7 +56,7 @@ export default function ProfilePage() {
   };
 
   const startEditing = () => {
-    setEditName(profile?.display_name || user?.profile?.name || "");
+    setEditName(user?.name || "");
     setEditing(true);
   };
 
@@ -77,27 +70,17 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      const res = await fetchWithAuth("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName.trim() }),
-      });
-
-      if (res.ok) {
-        toast.success("Profile updated");
-        setEditing(false);
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to update profile");
-      }
-    } catch {
-      toast.error("Something went wrong");
+      await api.patch("/api/v1/auth/me", { name: editName.trim() });
+      toast.success("Profile updated");
+      setEditing(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to update profile");
     } finally {
       setSaving(false);
     }
   };
 
-  const displayName = editing ? editName : (profile?.display_name || user?.profile?.name || "User");
+  const displayName = editing ? editName : (user?.name || "User");
   const userInitial = displayName.charAt(0).toUpperCase();
 
   if (!isLoaded || loading) {
@@ -157,11 +140,11 @@ export default function ProfilePage() {
                   <h1 className="text-xl font-semibold">{displayName}</h1>
                   <Badge
                     variant={
-                      profile?.role === "admin" ? "default" : "secondary"
+                      user?.role === "admin" ? "default" : "secondary"
                     }
                     className="text-xs"
                   >
-                    {profile?.role || "user"}
+                    {user?.role || "user"}
                   </Badge>
                   <button
                     onClick={startEditing}
@@ -173,12 +156,12 @@ export default function ProfilePage() {
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-0.5">
-                {profile?.email || user?.email}
+                {user?.email}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Member since{" "}
-                {profile?.created_at
-                  ? new Date(profile.created_at).toLocaleDateString("en-US", {
+                {user?.created_at
+                  ? new Date(user.created_at).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
                       year: "numeric",
@@ -215,7 +198,7 @@ export default function ProfilePage() {
                 Name
               </Label>
               <p className="text-sm font-medium">
-                {profile?.display_name || user?.profile?.name || "Not set"}
+                {user?.name || "Not set"}
               </p>
             </div>
             <div className="space-y-1.5">
@@ -223,7 +206,7 @@ export default function ProfilePage() {
                 <Mail className="h-3 w-3" />
                 Email
               </Label>
-              <p className="text-sm font-medium">{profile?.email || user?.email}</p>
+              <p className="text-sm font-medium">{user?.email}</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -231,7 +214,7 @@ export default function ProfilePage() {
                 Role
               </Label>
               <p className="text-sm font-medium capitalize">
-                {profile?.role || "user"}
+                {user?.role || "user"}
               </p>
             </div>
             <div className="space-y-1.5">
@@ -261,7 +244,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-6">
             <div className="text-center p-4 rounded-lg bg-muted/50">
               <CreditCard className="h-5 w-5 mx-auto text-primary mb-2" />
-              <p className="text-2xl font-bold">{profile?.credits ?? 0}</p>
+              <p className="text-2xl font-bold">{user?.credits ?? 0}</p>
               <p className="text-xs text-muted-foreground mt-1">Credits</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-muted/50">
@@ -272,7 +255,7 @@ export default function ProfilePage() {
             <div className="text-center p-4 rounded-lg bg-muted/50">
               <Globe className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
               <p className="text-2xl font-bold">
-                {(profile?.max_endpoints ?? 7) - endpointCount}
+                {(user?.max_endpoints ?? 7) - endpointCount}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Slots Remaining
@@ -286,7 +269,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium">Endpoint Usage</p>
               <p className="text-sm text-muted-foreground">
-                {endpointCount} / {profile?.max_endpoints ?? 7}
+                {endpointCount} / {user?.max_endpoints ?? 7}
               </p>
             </div>
             <div className="h-2.5 rounded-full bg-muted overflow-hidden">
@@ -294,7 +277,7 @@ export default function ProfilePage() {
                 className="h-full rounded-full bg-primary transition-all duration-500"
                 style={{
                   width: `${
-                    (endpointCount / (profile?.max_endpoints ?? 7)) * 100
+                    (endpointCount / (user?.max_endpoints ?? 7)) * 100
                   }%`,
                 }}
               />

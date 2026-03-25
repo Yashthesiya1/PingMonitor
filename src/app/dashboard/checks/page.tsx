@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useAuth } from "@insforge/nextjs";
+import { useAuth } from "@/lib/auth-context";
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ import {
   Clock,
   Activity,
 } from "lucide-react";
-import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import api from "@/lib/api";
 import type { Endpoint, EndpointCheck } from "@/lib/types";
 
 type SortField = "checked_at" | "status_code" | "response_time_ms" | "is_up" | "endpoint";
@@ -71,20 +71,14 @@ export default function ChecksPage() {
 
   const refreshAll = useCallback(async () => {
     try {
-      const epRes = await fetchWithAuth("/api/endpoints");
-      const { data: eps } = await epRes.json();
+      const { data: eps } = await api.get("/api/v1/endpoints");
       if (!eps) return;
       setEndpoints(eps);
-
-      const epMap = Object.fromEntries(
-        eps.map((e: Endpoint) => [e.id, e])
-      );
 
       const checksResults: CheckWithEndpoint[] = [];
       await Promise.all(
         eps.map(async (ep: Endpoint) => {
-          const r = await fetchWithAuth(`/api/endpoints/${ep.id}/checks`);
-          const { data } = await r.json();
+          const { data } = await api.get(`/api/v1/endpoints/${ep.id}/checks`);
           if (data) {
             data.forEach((c: EndpointCheck) => {
               checksResults.push({
