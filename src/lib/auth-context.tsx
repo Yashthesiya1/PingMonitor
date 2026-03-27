@@ -25,7 +25,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoaded: boolean;
   isSignedIn: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; role?: string }>;
   signUp: (
     email: string,
     password: string,
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<{ error?: string }> => {
+    async (email: string, password: string): Promise<{ error?: string; role?: string }> => {
       try {
         const res = await api.post("/api/v1/auth/login", { email, password });
         const { access_token, refresh_token } = res.data;
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userRes.data);
         localStorage.setItem("user", JSON.stringify(userRes.data));
 
-        return {};
+        return { role: userRes.data.role };
       } catch (err: any) {
         return {
           error:
