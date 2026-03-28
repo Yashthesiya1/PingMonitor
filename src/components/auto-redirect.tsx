@@ -4,13 +4,13 @@ import { useAuth } from "@/lib/auth-context";
 import { useEffect } from "react";
 
 export function AutoRedirectIfSignedIn() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, user } = useAuth();
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      window.location.href = "/dashboard/endpoints";
+      window.location.href = user?.role === "admin" ? "/admin" : "/dashboard/endpoints";
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, user]);
 
   return null;
 }

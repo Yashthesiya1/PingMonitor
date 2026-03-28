@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function SignInPage() {
-  const { signIn, isLoaded, isSignedIn } = useAuth();
+  const { signIn, isLoaded, isSignedIn, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +19,7 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
 
   if (isLoaded && isSignedIn) {
-    window.location.href = "/dashboard/endpoints";
+    window.location.href = user?.role === "admin" ? "/admin" : "/dashboard/endpoints";
     return null;
   }
 
@@ -38,7 +38,7 @@ export default function SignInPage() {
       setError(result.error);
       setLoading(false);
     } else {
-      window.location.href = "/dashboard/endpoints";
+      window.location.href = result.role === "admin" ? "/admin" : "/dashboard/endpoints";
     }
   };
 
